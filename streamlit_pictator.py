@@ -81,6 +81,28 @@ st.sidebar.metric("🧑 Your Generated Images", st.session_state.count)
 st.sidebar.markdown("---")
 
 # --------------------------------------
+# 🎨 MODEL SELECTOR (NEW PATCH)
+# --------------------------------------
+st.sidebar.markdown("---")
+st.sidebar.subheader("🎨 Image Model Control")
+
+MODEL_OPTIONS = {
+    "⚡ Default (Fast - FLUX Schnell)": "black-forest-labs/FLUX.1-schnell",
+    "🔥 Krea Dev (Ultra Realistic)": "black-forest-labs/FLUX.1-Krea-dev",
+    "🧠 Qwen Image (Balanced AI)": "Qwen/Qwen-Image",
+    "⚡ SDXL Lightning (Fastest)": "ByteDance/SDXL-Lightning"
+}
+
+selected_model_label = st.sidebar.selectbox(
+    "Choose Generation Model",
+    list(MODEL_OPTIONS.keys())
+)
+
+SELECTED_MODEL = MODEL_OPTIONS[selected_model_label]
+
+st.sidebar.caption(f"Active Model: {SELECTED_MODEL}")
+
+# --------------------------------------
 # API CONFIG
 # --------------------------------------
 OPENROUTER_API_KEY = st.secrets.get("OPENROUTER_API_KEY", "")
@@ -415,15 +437,54 @@ def normalize_specs(specs, prompt=""):
 # --------------------------------------
 # IMAGE ENGINE (HF)
 # --------------------------------------
+
 def hf_gen_image(prompt):
     try:
-        url = "https://router.huggingface.co/hf-inference/models/black-forest-labs/FLUX.1-schnell"
-        headers = {"Authorization": f"Bearer {HF_TOKEN}"}
-        r = requests.post(url, headers=headers, json={"inputs": prompt}, timeout=60)
-        return Image.open(io.BytesIO(r.content)).convert("RGB")
-    except:
+        model_url = f"https://router.huggingface.co/hf-inference/models/{SELECTED_MODEL}"
+
+        headers = {
+            "Authorization": f"Bearer {HF_TOKEN}",
+            "Content-Type": "application/json"
+        }
+
+        payload = {
+            "inputs": prompt,
+            "parameters": {
+                "guidance_scale": 7.5,
+                "num_inference_steps": 28
+            }
+        }
+
+        # ⚡ Speed optimization per model
+        if "Lightning" in SELECTED_MODEL:
+            payload["parameters"]["num_inference_steps"] = 8
+
+        if "Krea" in SELECTED_MODEL:
+            payload["parameters"]["guidance_scale"] = 8.5
+
+        r = requests.post(model_url, headers=headers, json=payload, timeout=60)
+
+        if r.status_code == 200:
+            return Image.open(io.BytesIO(r.content)).convert("RGB")
+
+        else:
+            return None
+
+    except Exception as e:
+        print(f"HF ERROR: {e}")
         return None
 
+def enhance_prompt(prompt):
+    if "Krea" in SELECTED_MODEL:
+        return f"{prompt}, ultra realistic, cinematic lighting, hyper-detailed textures, 8k, studio quality"
+
+    elif "Qwen" in SELECTED_MODEL:
+        return f"{prompt}, highly structured design, clean composition, modern industrial design"
+
+    elif "Lightning" in SELECTED_MODEL:
+        return f"{prompt}, sharp, fast render, high contrast, clean output"
+
+    return prompt
 # --------------------------------------
 # THREADS
 # --------------------------------------
@@ -515,7 +576,7 @@ if col1.button("🚀 EXECUTE"):
         ultra modern automotive seat, india market, 2026 design,
         premium materials, realistic lighting, 8k
         """
-        ai_img = hf_gen_image(dynamic_prompt)
+        ai_img = hf_gen_image(enhance_prompt(dynamic_prompt))
     
         if ai_img:
             final_images.append(ai_img)
@@ -621,7 +682,7 @@ if col1.button("🚀 EXECUTE"):
 # --------------------------------------
 if col2.button("🎨 RENDER"):
     with st.spinner("🎨 Fast Rendering 8K Intel..."):
-        img_render = hf_gen_image(f"{prompt}, ultra realistic, 8k, photorealistic automotive engineering")
+        img_render = hf_gen_image(enhance_prompt(f"{prompt}, ultra realistic, 8k, photorealistic automotive engineering")
         if img_render:
             st.image(img_render)
             st.session_state.count += 1
