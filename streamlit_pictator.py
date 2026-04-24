@@ -434,6 +434,25 @@ def normalize_specs(specs, prompt=""):
             ]
     
     return normalized[:3]
+
+# --------------------------------------
+# 🎯 TREND KEYWORDS (NEW FIX)
+# --------------------------------------
+TREND_KEYWORDS = [
+    "diamond quilted",
+    "carbon fiber texture",
+    "minimalist flat design",
+    "luxury napa leather",
+    "sport racing style",
+    "perforated leather",
+    "premium stitching",
+    "futuristic interior",
+    "ergonomic contour",
+    "high contrast dual tone",
+    "matte finish",
+    "3D embossed pattern"
+]
+
 # --------------------------------------
 # IMAGE ENGINE (HF)
 # --------------------------------------
