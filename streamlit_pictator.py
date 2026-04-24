@@ -602,7 +602,7 @@ def thread_assets(res, prompt):
         res.market_photos = r.json().get("images_results", [])[:3]
     except:
         res.market_photos = []
-    res.ai_concept = hf_gen_image(enhance_prompt(prompt))
+    res.ai_concept = hf_gen_image(enhance_prompt(final_prompt))
 
 # --------------------------------------
 # UI
@@ -631,6 +631,21 @@ with colC:
 lighting = st.selectbox("Lighting", ["studio", "ambient", "showroom", "blueprint"])
 quality = "8k photorealistic"
 
+# --------------------------------------
+# 🔥 FINAL PROMPT (AUTO GENERATED)
+# --------------------------------------
+structured_prompt = f"""
+Automotive seat cover design for {car_model},
+{seat_shape} seats, {material},
+{stitching} stitching pattern,
+{color} color combination,
+{use_case} design style,
+{lighting} lighting,
+ultra detailed textures, {quality}
+"""
+
+# 👉 Combine with user input (VERY IMPORTANT)
+final_prompt = f"{prompt}, {structured_prompt}"
 col1, col2 = st.columns(2)
 
 if col1.button("🚀 EXECUTE"):
@@ -647,41 +662,62 @@ if col1.button("🚀 EXECUTE"):
         status.update(label="✅ Analysis Complete", state="complete")
 
     # --------------------------------------
-    # 🔥 FINAL IMAGE PIPELINE (FIXED)
+    # 🔥 FINAL IMAGE PIPELINE (UPGRADED)
     # --------------------------------------
     final_images = []
+    
+    # --------------------------------------
+    # 1️⃣ MARKET IMAGES (UNCHANGED)
+    # --------------------------------------
     if res.market_photos:
         for img_data in res.market_photos:
             url = img_data.get("thumbnail") or img_data.get("original")
             if url:
                 final_images.append(url)
-
+    
+    # --------------------------------------
+    # 2️⃣ AI GENERATED IMAGES (USING FINAL PROMPT ✅)
+    # --------------------------------------
     while len(final_images) < 3:
         dynamic_prompt = f"""
-        {prompt}, {random.choice(TREND_KEYWORDS)},
+        {final_prompt}, {random.choice(TREND_KEYWORDS)},
         ultra modern automotive seat, india market, 2026 design,
         premium materials, realistic lighting, 8k
         """
+    
         ai_img = hf_gen_image(enhance_prompt(dynamic_prompt))
     
         if ai_img:
             final_images.append(ai_img)
         else:
-            break
-    # 3️⃣ FALLBACK (STILL DYNAMIC — NOT FIXED)
+            # ❌ If model fails, DO NOT break → try again
+            continue
+    
+    # --------------------------------------
+    # 3️⃣ FALLBACK (SMARTER)
+    # --------------------------------------
     while len(final_images) < 3:
-        fallback_query = f"https://source.unsplash.com/600x400/?{prompt},{random.choice(TREND_KEYWORDS)}"
+        fallback_query = f"https://source.unsplash.com/600x400/?{final_prompt},{random.choice(TREND_KEYWORDS)}"
         final_images.append(fallback_query)
     
+    # --------------------------------------
+    # ✅ SAVE RESULTS
+    # --------------------------------------
     res.final_images = final_images
-    # ✅ Count generated images
-    generated_count = len(res.final_images)
     
+    # --------------------------------------
+    # 📊 COUNTING
+    # --------------------------------------
+    generated_count = len(res.final_images)
     st.session_state.count += generated_count
     st.session_state.global_count += generated_count
     
+    # --------------------------------------
+    # ⚠️ SAFETY CHECK
+    # --------------------------------------
     if not res.final_images:
         st.warning("No images generated")
+    
     # --------------------------------------
     # 📦 DOWNLOAD ALL LOGIC (ZIP)
     # --------------------------------------
