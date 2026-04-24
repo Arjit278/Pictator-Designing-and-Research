@@ -682,7 +682,7 @@ if col1.button("🚀 EXECUTE"):
 # --------------------------------------
 if col2.button("🎨 RENDER"):
     with st.spinner("🎨 Fast Rendering 8K Intel..."):
-        img_render = hf_gen_image(enhance_prompt(f"{prompt}, ultra realistic, 8k, photorealistic automotive engineering")
+        img_render = hf_gen_image(enhance_prompt(f"{prompt}, ultra realistic, 8k, Seat Cover interior Desgins, photorealistic automotive engineering")) 
         if img_render:
             st.image(img_render)
             st.session_state.count += 1
