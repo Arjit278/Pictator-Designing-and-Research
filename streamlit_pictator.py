@@ -601,7 +601,7 @@ def thread_assets(res, prompt):
         res.market_photos = r.json().get("images_results", [])[:3]
     except:
         res.market_photos = []
-    res.ai_concept = hf_gen_image(prompt)
+    res.ai_concept = hf_gen_image(enhance_prompt(prompt))
 
 # --------------------------------------
 # UI
