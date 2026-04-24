@@ -459,51 +459,94 @@ TREND_KEYWORDS = [
 
 def hf_gen_image(prompt):
     try:
-        model_url = f"https://router.huggingface.co/hf-inference/models/{SELECTED_MODEL}"
+        model = SELECTED_MODEL
+        model_url = f"https://router.huggingface.co/hf-inference/models/{model}"
 
         headers = {
             "Authorization": f"Bearer {HF_TOKEN}",
             "Content-Type": "application/json"
         }
 
+        # --------------------------------------
+        # 🎯 MODEL-SPECIFIC PARAMS (IMPORTANT)
+        # --------------------------------------
         payload = {
             "inputs": prompt,
             "parameters": {
                 "guidance_scale": 7.5,
-                "num_inference_steps": 28
+                "num_inference_steps": 28,
+                "width": 1024,
+                "height": 1024
             }
         }
 
-        # ⚡ Speed optimization per model
-        if "Lightning" in SELECTED_MODEL:
+        if "Lightning" in model:
             payload["parameters"]["num_inference_steps"] = 8
+            payload["parameters"]["width"] = 768
+            payload["parameters"]["height"] = 768
 
-        if "Krea" in SELECTED_MODEL:
+        if "Krea" in model:
             payload["parameters"]["guidance_scale"] = 8.5
+            payload["parameters"]["num_inference_steps"] = 30
 
+        # --------------------------------------
+        # 🚀 MAIN REQUEST
+        # --------------------------------------
         r = requests.post(model_url, headers=headers, json=payload, timeout=60)
 
-        if r.status_code == 200:
+        # --------------------------------------
+        # ✅ VALID IMAGE CHECK (CRITICAL FIX)
+        # --------------------------------------
+        if r.status_code == 200 and "image" in r.headers.get("content-type", ""):
             return Image.open(io.BytesIO(r.content)).convert("RGB")
 
         else:
+            print("❌ MODEL FAILED:", model, r.status_code, r.text)
+
+            # --------------------------------------
+            # 🔥 FALLBACK TO STABLE MODEL
+            # --------------------------------------
+            fallback = "black-forest-labs/FLUX.1-schnell"
+            fallback_url = f"https://router.huggingface.co/hf-inference/models/{fallback}"
+
+            print("⚡ Switching to fallback:", fallback)
+
+            r2 = requests.post(
+                fallback_url,
+                headers=headers,
+                json={
+                    "inputs": prompt,
+                    "parameters": {
+                        "width": 1024,
+                        "height": 1024
+                    }
+                },
+                timeout=60
+            )
+
+            if r2.status_code == 200:
+                return Image.open(io.BytesIO(r2.content)).convert("RGB")
+
             return None
 
     except Exception as e:
-        print(f"HF ERROR: {e}")
+        print("🔥 HF ERROR:", e)
         return None
 
 def enhance_prompt(prompt):
+    base = f"{prompt}, automotive interior, ultra detailed, 8k, professional lighting"
+
     if "Krea" in SELECTED_MODEL:
-        return f"{prompt}, ultra realistic, cinematic lighting, hyper-detailed textures, 8k, studio quality"
+        return base + ", cinematic, photorealistic, leather texture, luxury finish"
 
     elif "Qwen" in SELECTED_MODEL:
-        return f"{prompt}, highly structured design, clean composition, modern industrial design"
+        return base + ", clean composition, structured design, product render"
 
     elif "Lightning" in SELECTED_MODEL:
-        return f"{prompt}, sharp, fast render, high contrast, clean output"
+        return base + ", sharp, high contrast, fast render"
 
-    return prompt
+    return base
+    
 # --------------------------------------
 # THREADS
 # --------------------------------------
