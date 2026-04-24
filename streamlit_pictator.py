@@ -294,7 +294,7 @@ def normalize_specs(specs, prompt=""):
     # 🧠 PART-BASED MATERIAL INTELLIGENCE
     # --------------------------------------
     PART_MATERIAL_MAP = {
-        "seat": "PU Leather / Fabric / Nappa leather",
+        "seat": "PU Leather / Fabric / Nappa leather/ synthetic leather",
         "headlight": "Polycarbonate Lens + LED Matrix",
         "tail light": "LED + Acrylic Housing",
         "steering": "Leather Wrapped + Aluminum Core",
@@ -565,10 +565,11 @@ def thread_meta(res, prompt):
         STRICT RULES:
         - If part = seat cover → ONLY seat cover manufacturers
         - DO NOT return tyre, battery, or unrelated brands
+        - Share European and international market designs with weblinks 
         - Prefer Indian aftermarket interior brands with weblinks
         - Include latest trends 2026 like Ultra-Quilt (Diamond), Carbon Fiber Texture, Minimalist "Flat" Grain, "GSM" (Grams per Square Meter) of the material
         - Display direct Website like https://www.autofurnish.com/collections/oem-style-factory-fitted-seat-covers, autofurnish.com/collections/oem-style-factory-fitted-seat-covers
-        - Also show trends in world in europe with websites working properly
+        - Also show trends in world in europe with websites and links with URL working properly
     
         FORMAT:
         [
@@ -608,6 +609,28 @@ def thread_assets(res, prompt):
 # --------------------------------------
 prompt = st.text_area("Enter Topic")
 
+# --------------------------------------
+# 🎯 STRUCTURED PROMPT BUILDER (NEW)
+# --------------------------------------
+st.subheader("🧠 Smart Design Builder")
+
+colA, colB, colC = st.columns(3)
+
+with colA:
+    car_model = st.text_input("Car Model", "Wagon-R, Grand Vitara")
+    seat_shape = st.selectbox("Seat Shape", ["bucket", "flat", "hybrid"])
+
+with colB:
+    material = st.selectbox("Material", ["PU leather", "Nappa leather", "fabric"])
+    stitching = st.selectbox("Stitching", ["diamond", "hex", "straight"])
+
+with colC:
+    color = st.text_input("Color Combo", "black + tan")
+    use_case = st.selectbox("Use Case", ["luxury", "budget", "sporty"])
+
+lighting = st.selectbox("Lighting", ["studio", "ambient", "showroom"])
+quality = "8k photorealistic"
+
 col1, col2 = st.columns(2)
 
 if col1.button("🚀 EXECUTE"):
@@ -617,6 +640,7 @@ if col1.button("🚀 EXECUTE"):
         t1 = threading.Thread(target=thread_rca, args=(res, prompt))
         t2 = threading.Thread(target=thread_meta, args=(res, prompt))
         t3 = threading.Thread(target=thread_assets, args=(res, prompt))
+        t4 = threading.Thread(target=thread_assets, args=(res, prompt))
 
         t1.start(); t2.start(); t3.start()
         t1.join(); t2.join(); t3.join()
