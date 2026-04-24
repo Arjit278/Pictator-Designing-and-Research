@@ -1,0 +1,9 @@
+streamlit
+requests
+Pillow
+huggingface-hub
+streamlit-3d
+pydeck
+opencv-python
+numpy
+pandas
