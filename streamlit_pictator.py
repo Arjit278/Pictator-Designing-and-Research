@@ -621,14 +621,14 @@ with colA:
     seat_shape = st.selectbox("Seat Shape", ["bucket", "flat", "hybrid"])
 
 with colB:
-    material = st.selectbox("Material", ["PU leather", "Nappa leather", "fabric"])
+    material = st.selectbox("Material", ["PU leather", "Nappa leather", "synthetic", "fabric"])
     stitching = st.selectbox("Stitching", ["diamond", "hex", "straight"])
 
 with colC:
     color = st.text_input("Color Combo", "black + tan")
     use_case = st.selectbox("Use Case", ["luxury", "budget", "sporty"])
 
-lighting = st.selectbox("Lighting", ["studio", "ambient", "showroom"])
+lighting = st.selectbox("Lighting", ["studio", "ambient", "showroom", "blueprint"])
 quality = "8k photorealistic"
 
 col1, col2 = st.columns(2)
