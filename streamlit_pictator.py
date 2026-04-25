@@ -842,7 +842,7 @@ if col1.button("🚀 EXECUTE"):
         st.download_button("💾 Save Concept Image", buf_concept.getvalue(), "concept.png", "image/png")
 
    
-    # --------------------------------------
+        # --------------------------------------
     # 🎨 HERO DESIGN IMAGE (FINAL FIX)
     # --------------------------------------
     st.subheader("🎨 Featured Design Concept")
@@ -878,12 +878,14 @@ if col1.button("🚀 EXECUTE"):
     
     
     clean_prompt = f"{car_model} car seat cover {material} {stitching} {color} {use_case}"
-    
     main_img = generate_main_image(clean_prompt)
-
+    
+    # --------------------------------------
+    # ✅ FIXED INDENTATION (IMPORTANT)
+    # --------------------------------------
     if isinstance(main_img, Image.Image):
-    st.image(main_img)
-
+        st.image(main_img)
+    
     elif isinstance(main_img, str) and main_img.startswith("http"):
         st.image(main_img)
     
@@ -891,11 +893,11 @@ if col1.button("🚀 EXECUTE"):
         st.warning("⚠️ AI image failed — loading fallback")
     
         fallback_imgs = get_clean_images(clean_prompt)
-
+    
     if fallback_imgs:
-        st.image(fallback_imgs[0])
-    else:
-        st.error("❌ No image available")
+         st.image(fallback_imgs[0])
+     else:
+         st.error("❌ No image available")
     
             
     # --- PATCH: DOWNLOAD TEXT REPORT ---
