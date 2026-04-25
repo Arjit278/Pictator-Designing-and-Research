@@ -17,8 +17,6 @@ st.set_page_config(page_title="Pictator Pro", page_icon="🏎️", layout="wide"
 st.title("🏎️ Pictator Pro – CEO Engineering Suite")
 st.caption("Strategic Parallel RCA | Multithreaded Design | 2026 Material Intel")
 
-
-
 # --------------------------------------
 # 🔐 LOGIN SYSTEM (ADDED - NO REMOVAL)
 # --------------------------------------
@@ -190,6 +188,103 @@ def extract_images_from_website(url):
 
     except:
         return []
+
+def generate_design_blocks(prompt):
+    p = prompt.lower()
+
+    blocks = []
+
+    # --------------------------------------
+    # 🎯 DETECT DESIGN INTENT FROM PROMPT
+    # --------------------------------------
+    if "quilt" in p:
+        blocks.append({
+            "title": "🔷 Diamond Quilted (Luxury)",
+            "score": "9/10",
+            "desc": "Premium cushioned design with strong visual appeal.",
+            "elements": [
+                "Diamond stitching",
+                "Dual tone contrast",
+                "Soft foam padding"
+            ],
+            "best_for": "Luxury builds",
+            "keyword": "diamond quilted seat cover leather"
+        })
+
+    if "sport" in p or "racing" in p:
+        blocks.append({
+            "title": "🔷 Sport Racing Design",
+            "score": "8/10",
+            "desc": "Aggressive sporty styling for performance interiors.",
+            "elements": [
+                "Side bolsters",
+                "Contrast stripes",
+                "Firm foam support"
+            ],
+            "best_for": "Sporty cars",
+            "keyword": "sport racing seat cover red black"
+        })
+
+    if "minimal" in p or "clean" in p:
+        blocks.append({
+            "title": "🔶 Minimal Flat Design",
+            "score": "7/10",
+            "desc": "Clean and modern flat surface styling.",
+            "elements": [
+                "Straight stitching",
+                "Matte finish",
+                "Low padding"
+            ],
+            "best_for": "Budget + clean builds",
+            "keyword": "minimal seat cover flat design"
+        })
+
+    if "puff" in p or "cushion" in p:
+        blocks.append({
+            "title": "🔷 Puffy Cushion Design",
+            "score": "8/10",
+            "desc": "Highly padded comfort-focused seat design.",
+            "elements": [
+                "Extra foam layering",
+                "Soft touch finish",
+                "Bulky stitched panels"
+            ],
+            "best_for": "Long drives comfort",
+            "keyword": "puffy seat cover cushion thick"
+        })
+
+    # --------------------------------------
+    # 🔥 FALLBACK (AUTO GENERATE IF NOTHING MATCHED)
+    # --------------------------------------
+    if not blocks:
+        blocks = [
+            {
+                "title": "🔷 Premium Leather Pattern",
+                "score": "8/10",
+                "desc": "Balanced premium design based on current market trends.",
+                "elements": [
+                    "Contrast stitching",
+                    "Ergonomic contour",
+                    "Dual tone finish"
+                ],
+                "best_for": "All segment cars",
+                "keyword": f"{prompt} seat cover design"
+            },
+            {
+                "title": "🔶 Comfort-Oriented Build",
+                "score": "7/10",
+                "desc": "Focus on comfort + usability.",
+                "elements": [
+                    "Soft padding",
+                    "Breathable fabric",
+                    "Flat structure"
+                ],
+                "best_for": "Wagon R, Swift",
+                "keyword": f"{prompt} comfortable seat cover"
+            }
+        ]
+
+    return blocks
 # --------------------------------------
 # RESULT CONTAINER
 # --------------------------------------
@@ -791,6 +886,15 @@ if col1.button("🚀 EXECUTE"):
     })
     specs = normalize_specs(raw_specs, prompt)
 
+    # --------------------------------------
+    # 🎨 HERO DESIGN IMAGE (MAIN VISUAL)
+    # --------------------------------------
+    st.subheader("🎨 Featured Design Concept")
+    
+    hero_img = hf_gen_image(enhance_prompt(final_prompt))
+    
+    if hero_img:
+        st.image(hero_img)
          
     # --- PATCH: DOWNLOAD TEXT REPORT ---
     report_text = f"ANALYSIS: {prompt}\n\nTRENDS:\n{res.rca_intel}\n\nSPECS:\n{json.dumps(specs, indent=2)}"
@@ -891,11 +995,48 @@ if col1.button("🚀 EXECUTE"):
     random.shuffle(dynamic_patterns)
     
     st.markdown("---")
-    st.markdown("### 🎨 Trending Design Directions (2026)")
     
-    for p in dynamic_patterns[:5]:
-        st.markdown(f"- {p}")
+    # --------------------------------------
+    # 🎯 DESIGN STORY BLOCKS (LIKE YOUR FORMAT)
+    # --------------------------------------
+    st.subheader("🎨 Seat Cover Design Directions")
     
+    designs = generate_design_blocks()
+    
+    for d in designs:
+        st.markdown(f"""
+    ### {d['title']}
+    🔥 {d['score']}
+    
+    {d['desc']}
+    
+    **Design Elements:**
+    """)
+    
+        for e in d["elements"]:
+            st.markdown(f"- {e}")
+    
+        st.markdown(f"""
+    **Best For:** {d['best_for']}
+    """)
+    
+        # 🔗 Get REAL website
+        site = fetch_real_website(d["keyword"], "seat")
+    
+        if site:
+            st.link_button("🌐 View Real Collection", site)
+    
+            # 🔥 REAL IMAGES FROM SAME WEBSITE
+            imgs = extract_images_from_website(site)
+    
+            if imgs:
+                cols = st.columns(len(imgs))
+                for i, im in enumerate(imgs):
+                    cols[i].image(im)
+            else:
+                st.info("No clean images found, try another source")
+    
+        st.markdown("---")
     # --------------------------------------
     # 🧠 MATERIAL INTELLIGENCE (DYNAMIC)
     # --------------------------------------
