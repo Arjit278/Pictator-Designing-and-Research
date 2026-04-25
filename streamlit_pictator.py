@@ -164,6 +164,32 @@ def fetch_real_website(brand, part="automotive"):
         pass
 
     return None
+
+def extract_images_from_website(url):
+    try:
+        headers = {"User-Agent": "Mozilla/5.0"}
+        r = requests.get(url, headers=headers, timeout=8)
+
+        html = r.text
+
+        # find image URLs
+        imgs = re.findall(r'<img[^>]+src="([^">]+)"', html)
+
+        clean_imgs = []
+        for img in imgs:
+            if any(x in img.lower() for x in ["seat", "cover", "interior"]):
+                if img.startswith("//"):
+                    img = "https:" + img
+                elif img.startswith("/"):
+                    base = url.split("/")[0] + "//" + url.split("/")[2]
+                    img = base + img
+
+                clean_imgs.append(img)
+
+        return clean_imgs[:3]
+
+    except:
+        return []
 # --------------------------------------
 # RESULT CONTAINER
 # --------------------------------------
@@ -899,42 +925,28 @@ if col1.button("🚀 EXECUTE"):
     """)
     
     # --------------------------------------
-    # 🖼 IMAGE DISPLAY (CLEAN)
+    # 🖼 REAL WEBSITE-BASED IMAGES (PRO FIX)
     # --------------------------------------
-    st.subheader("🖼 Live Design Inspirations")
+    st.subheader("🖼 Real Market Designs (From Brand Websites)")
     
-    for i, img_src in enumerate(res.final_images):
-        st.image(img_src)
+    all_display_items = indian + global_brands
     
-        if isinstance(img_src, Image.Image):
-            buf_spec = io.BytesIO()
-            img_src.save(buf_spec, format="PNG")
-            st.download_button(
-                f"📥 Save Design {i+1}",
-                buf_spec.getvalue(),
-                f"design_{i+1}.png",
-                "image/png",
-                key=f"img_dl_{i}"
-            )
-        
-    # --------------------------------------
-    # 🖼 IMAGE DISPLAY (UNCHANGED BUT CLEAN)
-    # --------------------------------------
-    st.subheader("🖼 Design Inspirations")
+    for item in all_display_items:
+        brand = item.get("Brand", "Unknown")
+        website = item.get("Website") or fetch_real_website(brand, "seat")
     
-    for i, img_src in enumerate(res.final_images):
-        st.image(img_src)
+        st.markdown(f"### {brand}")
+        st.link_button("🌐 View Source Website", website)
     
-        if isinstance(img_src, Image.Image):
-            buf_spec = io.BytesIO()
-            img_src.save(buf_spec, format="PNG")
-            st.download_button(
-                f"📥 Save Design {i+1}",
-                buf_spec.getvalue(),
-                f"design_{i+1}.png",
-                "image/png",
-                key=f"img_dl_{i}"
-            )
+        # 🔥 Extract REAL images from SAME website
+        real_imgs = extract_images_from_website(website)
+    
+        if real_imgs:
+            cols = st.columns(len(real_imgs))
+            for i, img in enumerate(real_imgs):
+                cols[i].image(img)
+        else:
+            st.warning("⚠️ No clean images found on source page")
 
 # --------------------------------------
 # RENDER (FAST STREAMING STYLE)
