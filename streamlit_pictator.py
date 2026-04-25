@@ -107,6 +107,9 @@ OPENROUTER_API_KEY = st.secrets.get("OPENROUTER_API_KEY", "")
 SERP_API_KEY = st.secrets.get("SERP_API_KEY", "")
 HF_TOKEN = st.secrets.get("HF_TOKEN", "")
 
+if not HF_TOKEN:
+    st.error("❌ HF_TOKEN missing - add in Streamlit secrets")
+
 # --------------------------------------
 # 🌐 WEBSITE FETCH
 # --------------------------------------
@@ -189,7 +192,7 @@ def get_clean_images(query):
 
     except:
         return []
-
+        
 def generate_design_blocks(prompt):
     p = prompt.lower()
 
@@ -400,178 +403,86 @@ PART_BRAND_WHITELIST = {
 # --------------------------------------
 def normalize_specs(specs, prompt=""):
     normalized = []
-    seen_brands = set()
+    seen = set()
 
-    # --------------------------------------
-    # 🔍 PART DETECTION (INLINE - LIGHTWEIGHT)
-    # --------------------------------------
     p = prompt.lower()
 
-    PART_KEYWORDS = {
-        "seat": ["seat", "seat cover"],
-        "headlight": ["headlight", "head lamp"],
-        "tail light": ["tail light", "rear light"],
-        "steering": ["steering"],
-        "tyre": ["tyre", "tire", "wheel"],
-        "brake": ["brake", "disc brake"],
-        "suspension": ["suspension", "shock absorber"],
-        "battery": ["battery", "ev battery"],
-        "mirror": ["mirror"],
-    }
-
-    detected_part = "automotive component"
-    for part, keywords in PART_KEYWORDS.items():
-        if any(k in p for k in keywords):
-            detected_part = part
-            break
-    # ✅ Detect part from earlier logic
-    allowed_brands = PART_BRAND_WHITELIST.get(detected_part, [])
-    
     # --------------------------------------
-    # 🧠 PART-BASED MATERIAL INTELLIGENCE
+    # 🔍 DETECT PART
+    # --------------------------------------
+    detected_part = "seat" if "seat" in p else "automotive"
+
+    # --------------------------------------
+    # 🧠 MATERIAL MAP
     # --------------------------------------
     PART_MATERIAL_MAP = {
-        "seat": "PU Leather / Fabric / Nappa leather/ synthetic leather",
-        "headlight": "Polycarbonate Lens + LED Matrix",
-        "tail light": "LED + Acrylic Housing",
-        "steering": "Leather Wrapped + Aluminum Core",
-        "tyre": "Rubber Compound + Steel Belt",
-        "brake": "Carbon Ceramic / Steel Disc",
-        "suspension": "Hydraulic + Alloy Steel",
-        "battery": "Lithium-ion Cells",
-        "mirror": "ABS Housing + Reflective Glass",
+        "seat": "PU Leather / Nappa / Fabric",
     }
 
     # --------------------------------------
-    # 🔄 NORMALIZATION LOOP
+    # 🔥 STRICT DOMAIN FILTER
+    # --------------------------------------
+    def is_trusted(url):
+        if not url:
+            return False
+        return any(domain in url for domain in TRUSTED_DOMAINS)
+
+    # --------------------------------------
+    # 🔄 MAIN LOOP
     # --------------------------------------
     for item in specs:
         if not isinstance(item, dict):
             continue
 
-        brand = item.get("Brand") or item.get("vendor") or "Unknown"
+        brand = (item.get("Brand") or "").strip()
 
-        # 🚫 Skip duplicates
-        if brand.lower() in seen_brands:
+        if not brand:
             continue
-        seen_brands.add(brand.lower())
 
-        # ✅ Safe vehicle extraction
-        compatibility = item.get("compatibility")
-        if isinstance(compatibility, list) and len(compatibility) > 0:
-            vehicle = compatibility[0]
-        elif isinstance(compatibility, str):
-            vehicle = compatibility
-        else:
-            vehicle = item.get("Vehicle") or "Generic"
+        # 🔥 NORMALIZE BRAND NAME (REMOVE DUPLICATE VARIANTS)
+        brand_key = brand.lower().replace(" ", "").replace("-", "")
 
-        # ✅ Smart material logic (part-aware + fallback detection)
-        item_str = str(item).lower()
+        if brand_key in seen:
+            continue
+        seen.add(brand_key)
 
-        if item.get("Material"):
-            material = item.get("Material")
-        elif any(x in item_str for x in ["leather", "napa", "alcantara", "pu leather", "vegan leather"]):
-            material = "Premium Leather / Synthetic"
-        else:
-            material = PART_MATERIAL_MAP.get(detected_part, "Advanced Automotive Material")
-
-        # ✅ Dynamic type (based on part)
-        comp_type = item.get("Type") or item.get("model") or detected_part
-
-        # ✅ Strength tuning per part
-        if detected_part in ["brake", "suspension"]:
-            strength = item.get("Strength") or "High Load / Safety Critical"
-        elif detected_part in ["tyre"]:
-            strength = item.get("Strength") or "Wear Resistant / High Grip"
-        else:
-            strength = item.get("Strength") or "Optimized"
-
-        # ✅ Website logic (robust)
+        # --------------------------------------
+        # 🌐 WEBSITE (STRICT CONTROL)
+        # --------------------------------------
         website = item.get("Website")
-        if not website or "http" not in website:
-            safe_brand = brand if brand and brand != "Unknown" else f"{detected_part} supplier india"
-            website = fetch_real_website(safe_brand, detected_part)
-        
+
+        if not is_trusted(website):
+            website = fetch_real_website(brand, detected_part)
+
+        # 🔥 FINAL CHECK — ONLY TRUSTED DOMAINS ALLOWED
+        if not is_trusted(website):
+            continue  # ❌ skip completely
+
+        # --------------------------------------
+        # 🧠 MATERIAL
+        # --------------------------------------
+        material = item.get("Material") or PART_MATERIAL_MAP.get(detected_part)
+
+        # --------------------------------------
+        # 📦 BUILD CLEAN OBJECT
+        # --------------------------------------
         normalized.append({
             "Brand": brand,
-            "Vehicle": vehicle,
-            "Type": comp_type,
+            "Vehicle": item.get("Vehicle", "Passenger Car"),
+            "Type": item.get("Type", detected_part),
             "Material": material,
-            "Strength": strength,
-            "Description": item.get("description") or "",
+            "Strength": item.get("Strength", "Optimized"),
+            "Description": item.get("description", ""),
             "Website": website
         })
 
+    # --------------------------------------
+    # 🚨 NO FALLBACKS — PURE OUTPUT ONLY
+    # --------------------------------------
     return normalized
 
-    # --------------------------------------
-    # 🛡 FINAL FALLBACK (INSIDE FUNCTION)
-    # --------------------------------------
-    if not normalized or all(d.get("Brand") == "Unknown" for d in normalized):
-    
-        if detected_part == "seat":
-            normalized = [
-                {
-                    "Brand": "Autoform",
-                    "Vehicle": "Passenger Car",
-                    "Type": "Seat Cover",
-                    "Material": "PU Leather",
-                    "Strength": "Premium Finish",
-                    "Description": "India leader in custom seat covers",
-                    "Website": "https://autoform.in"
-                },
-                {
-                    "Brand": "Stanley",
-                    "Vehicle": "Premium Cars",
-                    "Type": "Seat Cover",
-                    "Material": "Nappa Leather",
-                    "Strength": "Luxury Grade",
-                    "Description": "High-end automotive interiors",
-                    "Website": reviews.oneclearwinner.com/product/custom-made-car-seat-covers
-                },
-                {
-                    "Brand": "Elegant Auto Accessories",
-                    "Vehicle": "Universal Fit",
-                    "Type": "Seat Cover",
-                    "Material": "Synthetic Leather",
-                    "Strength": "Durable",
-                    "Description": "Mass market seat cover supplier",
-                    "Website": "https://www.autofurnish.com/collections/oem-style-factory-fitted-seat-covers"
-                }
-            ]
-        else:
-            normalized = [
-                {
-                    "Brand": "Bosch India",
-                    "Vehicle": "Passenger Car",
-                    "Type": "Automotive Component",
-                    "Material": "Advanced Automotive Material",
-                    "Strength": "High Reliability",
-                    "Description": "Leading OEM supplier in India",
-                    "Website": "https://www.bosch.in"
-                },
-                {
-                    "Brand": "Uno Minda",
-                    "Vehicle": "2W/4W",
-                    "Type": "Automotive Component",
-                    "Material": "Engineered Materials",
-                    "Strength": "Durable",
-                    "Description": "Major Indian auto component manufacturer",
-                    "Website": "https://www.unominda.com"
-                },
-                {
-                    "Brand": "Lumax",
-                    "Vehicle": "Passenger Car",
-                    "Type": "Lighting & Components",
-                    "Material": "Polycarbonate / Electronics",
-                    "Strength": "OEM Grade",
-                    "Description": "Leading automotive lighting player",
-                    "Website": "https://www.lumaxworld.in"
-                }
-            ]
-    
-    return normalized[:3]
-
+if not specs:
+    st.warning("⚠️ No trusted suppliers found. Try refining prompt.")
 # --------------------------------------
 # 🎯 TREND KEYWORDS (NEW FIX)
 # --------------------------------------
@@ -860,15 +771,22 @@ if col1.button("🚀 EXECUTE"):
     })
     specs = normalize_specs(raw_specs, prompt)
 
-    # --------------------------------------
-    # 🎨 HERO DESIGN IMAGE (MAIN VISUAL)
+        # --------------------------------------
+    # 🎨 HERO DESIGN IMAGE (FIXED)
     # --------------------------------------
     st.subheader("🎨 Featured Design Concept")
     
-    hero_img = hf_gen_image(enhance_prompt(final_prompt))
+    clean_prompt = f"{car_model} car seat cover, {material}, {stitching} stitching, {color}, {use_case}, ultra realistic, 8k"
+    
+    hero_img = hf_gen_image(enhance_prompt(clean_prompt))
     
     if hero_img:
         st.image(hero_img)
+    else:
+        st.warning("⚠️ AI model failed, using fallback visual")
+    
+        fallback_img = f"https://source.unsplash.com/1024x768/?car-seat,leather,interior,{stitching}"
+        st.image(fallback_img)
          
     # --- PATCH: DOWNLOAD TEXT REPORT ---
     report_text = f"ANALYSIS: {prompt}\n\nTRENDS:\n{res.rca_intel}\n\nSPECS:\n{json.dumps(specs, indent=2)}"
