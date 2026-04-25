@@ -716,15 +716,49 @@ if col1.button("🚀 EXECUTE"):
     res = AnalysisResults()
 
     with st.status("🚀 Engineering Data...", expanded=True) as status:
-        t1 = threading.Thread(target=thread_rca, args=(res, prompt))
-        t2 = threading.Thread(target=thread_meta, args=(res, prompt))
-        t3 = threading.Thread(target=thread_assets, args=(res, prompt))
 
-        t1.start(); t2.start(); t3.start()
-        t1.join(); t2.join(); t3.join()
+        # --------------------------------------
+        # 🧠 LLM TREND ANALYSIS
+        # --------------------------------------
+        res.rca_intel, res.rca_status = call_openrouter_with_fallback_requests(
+            f"Generate automotive trends: {prompt}", OPENROUTER_API_KEY
+        )
 
-        t1.start(); t2.start(); t3.start()
-        t1.join(); t2.join(); t3.join()
+        # --------------------------------------
+        # 📦 SUPPLIER DATA
+        # --------------------------------------
+        res.specs_raw, _ = call_openrouter_with_fallback_requests(
+            f"""
+            Return ONLY VALID JSON.
+
+            Generate EXACTLY 3 REAL seat cover vendors for: {prompt}
+
+            Include:
+            - Brand
+            - Material
+            - Description
+            - Website (working product/collection page)
+
+            Output format:
+            [
+                {{
+                    "Brand": "",
+                    "Material": "",
+                    "Description": "",
+                    "Website": ""
+                }}
+            ]
+            """,
+            OPENROUTER_API_KEY
+        )
+
+        # --------------------------------------
+        # 🎨 IMAGE GENERATION (MAIN FIX)
+        # --------------------------------------
+        clean_prompt = f"{car_model} car seat cover {material} {stitching} {color} {use_case}"
+
+        res.ai_concept = hf_gen_image(enhance_prompt(clean_prompt))
+
         status.update(label="✅ Analysis Complete", state="complete")
 
              
