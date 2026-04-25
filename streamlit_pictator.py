@@ -826,7 +826,6 @@ if col1.button("🚀 EXECUTE"):
         "application/zip"
     )
         
-
     # --------------------------------------
     # DISPLAY
     # --------------------------------------
@@ -890,21 +889,20 @@ if col1.button("🚀 EXECUTE"):
         st.error("❌ Image system failed — check API keys")
     
     # --------------------------------------
-    # ✅ PRIMARY (AI IMAGE)
+    # 🎨 HERO DESIGN IMAGE (FINAL FIX)
     # --------------------------------------
-    if hero_img:
-        st.image(hero_img)
+    st.subheader("🎨 Featured Design Concept")
     
-    # --------------------------------------
-    # 🔁 FALLBACK (REAL IMAGE)
-    # --------------------------------------
+    clean_prompt = f"{car_model} car seat cover {material} {stitching} {color} {use_case}"
+    
+    main_img = generate_main_image(clean_prompt)
+    
+    if isinstance(main_img, Image.Image):
+        st.image(main_img)
+    elif isinstance(main_img, str):
+        st.image(main_img)
     else:
-        fallback = get_fallback_image(clean_prompt)
-    
-        if fallback:
-            st.image(fallback)
-        else:
-            st.warning("⚠️ No image available — check API keys")
+        st.error("❌ Image system failed — check API keys")
          
     # --- PATCH: DOWNLOAD TEXT REPORT ---
     report_text = f"ANALYSIS: {prompt}\n\nTRENDS:\n{res.rca_intel}\n\nSPECS:\n{json.dumps(specs, indent=2)}"
@@ -915,16 +913,6 @@ if col1.button("🚀 EXECUTE"):
     # --------------------------------------
     st.subheader("🌍 Market Intelligence & Live Sourcing")
     
-    raw_specs = safe_json_extract(res.specs_raw)
-    
-    # Store logs
-    st.session_state.admin_logs.append({
-        "timestamp": time.strftime("%Y-%m-%d %H:%M:%S"),
-        "prompt": prompt,
-        "raw_output": res.specs_raw
-    })
-    
-    specs = normalize_specs(raw_specs, prompt)
     
     # --------------------------------------
     # 🎯 DYNAMIC SPLIT (INDIA vs GLOBAL)
