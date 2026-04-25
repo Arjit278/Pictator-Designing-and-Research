@@ -896,7 +896,7 @@ if col1.button("🚀 EXECUTE"):
     
     if fallback_imgs:
          st.image(fallback_imgs[0])
-     else:
+    else:
          st.error("❌ No image available")
     
             
