@@ -580,6 +580,8 @@ def hf_gen_image(prompt):
     except Exception as e:
         print("🔥 HF ERROR:", e)
         return None
+    print("HF STATUS:", r.status_code)
+    print("HF RESPONSE:", r.text[:200])
 
 def enhance_prompt(prompt):
     base = f"{prompt}, automotive interior, ultra detailed, 8k, professional lighting"
@@ -753,7 +755,10 @@ if col1.button("🚀 EXECUTE"):
     # DISPLAY
     # --------------------------------------
     st.subheader("📊 Current Trends")
+    if res.rca_intel:
     st.write(res.rca_intel)
+    else:
+    st.info("No trend data available — retry or check API key")
 
     if res.ai_concept:
         st.image(res.ai_concept)
@@ -771,22 +776,54 @@ if col1.button("🚀 EXECUTE"):
     })
     specs = normalize_specs(raw_specs, prompt)
 
-        # --------------------------------------
-    # 🎨 HERO DESIGN IMAGE (FIXED)
+    # --------------------------------------
+    # 🎨 HERO DESIGN IMAGE (ROBUST FIX)
     # --------------------------------------
     st.subheader("🎨 Featured Design Concept")
     
-    clean_prompt = f"{car_model} car seat cover, {material}, {stitching} stitching, {color}, {use_case}, ultra realistic, 8k"
+    def get_fallback_image(prompt):
+        try:
+            r = requests.get(
+                "https://serpapi.com/search",
+                params={
+                    "engine": "google_images",
+                    "q": prompt + " car seat cover leather premium interior",
+                    "api_key": SERP_API_KEY
+                },
+                timeout=10
+            )
+    
+            imgs = r.json().get("images_results", [])
+            if imgs:
+                return imgs[0].get("original")
+    
+        except:
+            pass
+    
+        return None
+    
+    
+    # 🔥 CLEAN PROMPT (IMPORTANT)
+    clean_prompt = f"{car_model} car seat cover, {material}, {stitching} stitching, {color}, premium interior"
     
     hero_img = hf_gen_image(enhance_prompt(clean_prompt))
     
+    # --------------------------------------
+    # ✅ PRIMARY (AI IMAGE)
+    # --------------------------------------
     if hero_img:
         st.image(hero_img)
-    else:
-        st.warning("⚠️ AI model failed, using fallback visual")
     
-        fallback_img = f"https://source.unsplash.com/1024x768/?car-seat,leather,interior,{stitching}"
-        st.image(fallback_img)
+    # --------------------------------------
+    # 🔁 FALLBACK (REAL IMAGE)
+    # --------------------------------------
+    else:
+        fallback = get_fallback_image(clean_prompt)
+    
+        if fallback:
+            st.image(fallback)
+        else:
+            st.warning("⚠️ No image available — check API keys")
          
     # --- PATCH: DOWNLOAD TEXT REPORT ---
     report_text = f"ANALYSIS: {prompt}\n\nTRENDS:\n{res.rca_intel}\n\nSPECS:\n{json.dumps(specs, indent=2)}"
