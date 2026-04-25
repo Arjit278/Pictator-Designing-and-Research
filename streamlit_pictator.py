@@ -762,30 +762,57 @@ if col1.button("🚀 EXECUTE"):
         status.update(label="✅ Analysis Complete", state="complete")
 
              
-    # --------------------------------------
-    # 📦 DOWNLOAD ALL LOGIC (ZIP)
+     # --------------------------------------
+    # 📦 DOWNLOAD ALL (ZIP - UPDATED)
     # --------------------------------------
     zip_buf = io.BytesIO()
-    with zipfile.ZipFile(zip_buf, "w") as zf:
-        # Report
-        report = f"TOPIC: {prompt}\n\nTRENDS:\n{res.rca_intel}\n\nSPECS:\n{res.specs_raw}"
-        zf.writestr("full_report.txt", report)
-        # Images
-        # --- UPDATE THIS SUB-BLOCK ---
-        if res.ai_concept:
-            try:
-                img_byte = io.BytesIO()
-                res.ai_concept.save(img_byte, format="PNG")
-                zf.writestr("concept_design.png", img_byte.getvalue())
-            except Exception as e:
-                st.error(f"Error saving ZIP image: {e}")
-        for idx, img_obj in enumerate(res.final_images):
-            if isinstance(img_obj, Image.Image):
-                img_byte = io.BytesIO()
-                img_obj.save(img_byte, format="PNG")
-                zf.writestr(f"spec_image_{idx}.png", img_byte.getvalue())
     
-    st.sidebar.download_button("📦 Download All Files (ZIP)", zip_buf.getvalue(), "Pictator_Package.zip", "application/zip")
+    with zipfile.ZipFile(zip_buf, "w") as zf:
+    
+        # --------------------------------------
+        # 📄 REPORT
+        # --------------------------------------
+        report = f"""
+    TOPIC: {prompt}
+    
+    TRENDS:
+    {res.rca_intel}
+    
+    SPECS:
+    {json.dumps(specs, indent=2)}
+    """
+        zf.writestr("full_report.txt", report)
+    
+        # --------------------------------------
+        # 🎨 MAIN IMAGE (NEW SYSTEM)
+        # --------------------------------------
+        if 'main_img' in locals():
+    
+            try:
+                if isinstance(main_img, Image.Image):
+                    img_byte = io.BytesIO()
+                    main_img.save(img_byte, format="PNG")
+                    zf.writestr("concept_design.png", img_byte.getvalue())
+    
+                elif isinstance(main_img, str):
+                    # download image from URL
+                    r = requests.get(main_img, timeout=10)
+                    if r.status_code == 200:
+                        zf.writestr("concept_design.png", r.content)
+    
+            except Exception as e:
+                st.error(f"Error saving main image: {e}")
+    
+    # --------------------------------------
+    # 📥 DOWNLOAD BUTTON
+    # --------------------------------------
+    st.sidebar.download_button(
+        "📦 Download All Files (ZIP)",
+        zip_buf.getvalue(),
+        "Pictator_Package.zip",
+        "application/zip"
+    )
+        
 
     # --------------------------------------
     # DISPLAY
