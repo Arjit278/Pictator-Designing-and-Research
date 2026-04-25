@@ -515,9 +515,6 @@ def hf_gen_image(prompt):
             "Content-Type": "application/json"
         }
 
-        # --------------------------------------
-        # 🎯 MODEL-SPECIFIC PARAMS (IMPORTANT)
-        # --------------------------------------
         payload = {
             "inputs": prompt,
             "parameters": {
@@ -528,60 +525,86 @@ def hf_gen_image(prompt):
             }
         }
 
+        # --------------------------------------
+        # 🎯 MODEL-SPECIFIC TUNING
+        # --------------------------------------
         if "Lightning" in model:
-            payload["parameters"]["num_inference_steps"] = 8
-            payload["parameters"]["width"] = 768
-            payload["parameters"]["height"] = 768
+            payload["parameters"].update({
+                "num_inference_steps": 8,
+                "width": 768,
+                "height": 768
+            })
 
         if "Krea" in model:
-            payload["parameters"]["guidance_scale"] = 8.5
-            payload["parameters"]["num_inference_steps"] = 30
+            payload["parameters"].update({
+                "guidance_scale": 8.5,
+                "num_inference_steps": 30
+            })
 
         # --------------------------------------
-        # 🚀 MAIN REQUEST
+        # 🚀 PRIMARY REQUEST
         # --------------------------------------
         r = requests.post(model_url, headers=headers, json=payload, timeout=60)
 
         # --------------------------------------
-        # ✅ VALID IMAGE CHECK (CRITICAL FIX)
+        # ✅ HANDLE SUCCESS
         # --------------------------------------
-        if r.status_code == 200 and "image" in r.headers.get("content-type", ""):
-            return Image.open(io.BytesIO(r.content)).convert("RGB")
+        if r.status_code == 200:
+            try:
+                return Image.open(io.BytesIO(r.content)).convert("RGB")
+            except:
+                print("⚠️ Response not a valid image")
+                print("CONTENT-TYPE:", r.headers.get("content-type"))
 
-        else:
-            print("❌ MODEL FAILED:", model, r.status_code, r.text)
+        # --------------------------------------
+        # 🔍 DEBUG (IMPORTANT)
+        # --------------------------------------
+        print(f"❌ HF PRIMARY FAILED | Model: {model}")
+        print("STATUS:", r.status_code)
+        print("RESPONSE:", r.text[:200])
 
-            # --------------------------------------
-            # 🔥 FALLBACK TO STABLE MODEL
-            # --------------------------------------
-            fallback = "black-forest-labs/FLUX.1-schnell"
-            fallback_url = f"https://router.huggingface.co/hf-inference/models/{fallback}"
+        if r.status_code == 401:
+            print("🔐 Invalid or missing HF token")
 
-            print("⚡ Switching to fallback:", fallback)
+        if r.status_code == 429:
+            print("⚠️ Rate limit hit")
 
-            r2 = requests.post(
-                fallback_url,
-                headers=headers,
-                json={
-                    "inputs": prompt,
-                    "parameters": {
-                        "width": 1024,
-                        "height": 1024
-                    }
-                },
-                timeout=60
-            )
+        # --------------------------------------
+        # 🔥 FALLBACK MODEL
+        # --------------------------------------
+        fallback = "black-forest-labs/FLUX.1-schnell"
+        fallback_url = f"https://router.huggingface.co/hf-inference/models/{fallback}"
 
-            if r2.status_code == 200:
+        print("⚡ Switching to fallback:", fallback)
+
+        r2 = requests.post(
+            fallback_url,
+            headers=headers,
+            json={
+                "inputs": prompt,
+                "parameters": {
+                    "width": 1024,
+                    "height": 1024
+                }
+            },
+            timeout=60
+        )
+
+        if r2.status_code == 200:
+            try:
                 return Image.open(io.BytesIO(r2.content)).convert("RGB")
+            except:
+                print("⚠️ Fallback response not image")
 
-            return None
+        print("❌ FALLBACK FAILED")
+        print("STATUS:", r2.status_code)
+        print("RESPONSE:", r2.text[:200])
+
+        return None
 
     except Exception as e:
         print("🔥 HF ERROR:", e)
         return None
-    print("HF STATUS:", r.status_code)
-    print("HF RESPONSE:", r.text[:200])
 
 def enhance_prompt(prompt):
     base = f"{prompt}, automotive interior, ultra detailed, 8k, professional lighting"
@@ -643,18 +666,8 @@ def thread_meta(res, prompt):
     )
 
 def thread_assets(res, prompt):
-    try:
-        r = requests.get(
-            "https://serpapi.com/search",
-            params={"engine": "google_images", "q": prompt, "api_key": SERP_API_KEY},
-            timeout=10
-        )
-        def thread_assets(res, prompt):
-            res.ai_concept = hf_gen_image(enhance_prompt(final_prompt))
-    except:
-        res.market_photos = []
-    res.ai_concept = hf_gen_image(enhance_prompt(final_prompt))
-
+    res.ai_concept = hf_gen_image(enhance_prompt(prompt))
+    
 # --------------------------------------
 # UI
 # --------------------------------------
@@ -706,26 +719,15 @@ if col1.button("🚀 EXECUTE"):
         t1 = threading.Thread(target=thread_rca, args=(res, prompt))
         t2 = threading.Thread(target=thread_meta, args=(res, prompt))
         t3 = threading.Thread(target=thread_assets, args=(res, prompt))
-        t4 = threading.Thread(target=thread_assets, args=(res, prompt))
+
+        t1.start(); t2.start(); t3.start()
+        t1.join(); t2.join(); t3.join()
 
         t1.start(); t2.start(); t3.start()
         t1.join(); t2.join(); t3.join()
         status.update(label="✅ Analysis Complete", state="complete")
 
-        
-    # --------------------------------------
-    # 📊 COUNTING
-    # --------------------------------------
-    generated_count = len(res.final_images)
-    st.session_state.count += generated_count
-    st.session_state.global_count += generated_count
-    
-    # --------------------------------------
-    # ⚠️ SAFETY CHECK
-    # --------------------------------------
-    if not res.final_images:
-        st.warning("No images generated")
-    
+             
     # --------------------------------------
     # 📦 DOWNLOAD ALL LOGIC (ZIP)
     # --------------------------------------
@@ -760,8 +762,7 @@ if col1.button("🚀 EXECUTE"):
         st.markdown(res.rca_intel)
     else:
         st.info("⚠️ No trend data available. Try refining your prompt or check API keys.")
-    if res.ai_concept:
-        st.image(res.ai_concept)
+    
         # --- PATCH: DOWNLOAD CONCEPT ---
         buf_concept = io.BytesIO()
         res.ai_concept.save(buf_concept, format="PNG")
@@ -777,36 +778,50 @@ if col1.button("🚀 EXECUTE"):
     specs = normalize_specs(raw_specs, prompt)
 
     # --------------------------------------
-    # 🎨 HERO DESIGN IMAGE (ROBUST FIX)
+    # 🎨 HERO DESIGN IMAGE (FINAL FIX)
     # --------------------------------------
     st.subheader("🎨 Featured Design Concept")
     
-    def get_fallback_image(prompt):
+    def generate_main_image(prompt):
+        # 1️⃣ Try AI
+        img = hf_gen_image(enhance_prompt(prompt))
+        if img:
+            return img
+    
+        # 2️⃣ Fallback → SERP
         try:
             r = requests.get(
                 "https://serpapi.com/search",
                 params={
                     "engine": "google_images",
-                    "q": prompt + " car seat cover leather premium interior",
+                    "q": prompt + " car seat cover leather interior premium",
                     "api_key": SERP_API_KEY
                 },
                 timeout=10
             )
     
             imgs = r.json().get("images_results", [])
-            if imgs:
-                return imgs[0].get("original")
     
+            for im in imgs:
+                url = im.get("original")
+                if url and any(k in url.lower() for k in ["seat", "cover", "interior"]):
+                    return url
         except:
             pass
     
         return None
     
     
-    # 🔥 CLEAN PROMPT (IMPORTANT)
-    clean_prompt = f"{car_model} car seat cover, {material}, {stitching} stitching, {color}, premium interior"
+    clean_prompt = f"{car_model} car seat cover {material} {stitching} {color} {use_case}"
     
-    hero_img = hf_gen_image(enhance_prompt(clean_prompt))
+    main_img = generate_main_image(clean_prompt)
+    
+    if isinstance(main_img, Image.Image):
+        st.image(main_img)
+    elif isinstance(main_img, str):
+        st.image(main_img)
+    else:
+        st.error("❌ Image system failed — check API keys")
     
     # --------------------------------------
     # ✅ PRIMARY (AI IMAGE)
