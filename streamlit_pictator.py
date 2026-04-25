@@ -761,6 +761,19 @@ if col1.button("🚀 EXECUTE"):
 
         status.update(label="✅ Analysis Complete", state="complete")
 
+     # --------------------------------------
+    # 🔧 PREPARE SPECS (ONLY ONCE - IMPORTANT)
+    # --------------------------------------
+    raw_specs = safe_json_extract(res.specs_raw)
+    
+    # 🔐 Store raw LLM output for admin
+    st.session_state.admin_logs.append({
+        "timestamp": time.strftime("%Y-%m-%d %H:%M:%S"),
+        "prompt": prompt,
+        "raw_output": res.specs_raw
+    })
+    
+    specs = normalize_specs(raw_specs, prompt)
              
      # --------------------------------------
     # 📦 DOWNLOAD ALL (ZIP - UPDATED)
@@ -829,15 +842,7 @@ if col1.button("🚀 EXECUTE"):
         res.ai_concept.save(buf_concept, format="PNG")
         st.download_button("💾 Save Concept Image", buf_concept.getvalue(), "concept.png", "image/png")
 
-    raw_specs = safe_json_extract(res.specs_raw)
-    # 🔐 Store raw LLM output for admin
-    st.session_state.admin_logs.append({
-        "timestamp": time.strftime("%Y-%m-%d %H:%M:%S"),
-        "prompt": prompt,
-        "raw_output": res.specs_raw
-    })
-    specs = normalize_specs(raw_specs, prompt)
-
+   
     # --------------------------------------
     # 🎨 HERO DESIGN IMAGE (FINAL FIX)
     # --------------------------------------
