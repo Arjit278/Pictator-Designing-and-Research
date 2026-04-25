@@ -880,30 +880,24 @@ if col1.button("🚀 EXECUTE"):
     clean_prompt = f"{car_model} car seat cover {material} {stitching} {color} {use_case}"
     
     main_img = generate_main_image(clean_prompt)
-    
+
     if isinstance(main_img, Image.Image):
+    st.image(main_img)
+
+    elif isinstance(main_img, str) and main_img.startswith("http"):
         st.image(main_img)
-    elif isinstance(main_img, str):
-        st.image(main_img)
+    
     else:
-        st.error("❌ Image system failed — check API keys")
+        st.warning("⚠️ AI image failed — loading fallback")
     
-    # --------------------------------------
-    # 🎨 HERO DESIGN IMAGE (FINAL FIX)
-    # --------------------------------------
-    st.subheader("🎨 Featured Design Concept")
-    
-    clean_prompt = f"{car_model} car seat cover {material} {stitching} {color} {use_case}"
-    
-    main_img = generate_main_image(clean_prompt)
-    
-    if isinstance(main_img, Image.Image):
-        st.image(main_img)
-    elif isinstance(main_img, str):
-        st.image(main_img)
+        fallback_imgs = get_clean_images(clean_prompt)
+
+    if fallback_imgs:
+        st.image(fallback_imgs[0])
     else:
-        st.error("❌ Image system failed — check API keys")
-         
+        st.error("❌ No image available")
+    
+            
     # --- PATCH: DOWNLOAD TEXT REPORT ---
     report_text = f"ANALYSIS: {prompt}\n\nTRENDS:\n{res.rca_intel}\n\nSPECS:\n{json.dumps(specs, indent=2)}"
     st.sidebar.download_button("📄 Download Full Report", report_text, f"report_{prompt[:10]}.txt", "text/plain")
@@ -1019,13 +1013,15 @@ if col1.button("🚀 EXECUTE"):
     """)
     
         # 🔗 Get REAL website
-        site = fetch_real_website(d["keyword"], "seat")
+        brand = specs[0]["Brand"] if specs else d["keyword"]
+        site = fetch_real_website(brand, "seat")
     
         if site:
             st.link_button("🌐 View Real Collection", site)
     
             # 🔥 REAL IMAGES FROM SAME WEBSITE
-            imgs = get_clean_images(d["keyword"])
+            unique_query = f"{d['keyword']} {random.randint(1,10000)}"
+            imgs = get_clean_images(unique_query)
     
             if imgs:
                 cols = st.columns(len(imgs))
