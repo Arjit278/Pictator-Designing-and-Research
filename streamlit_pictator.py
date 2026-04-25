@@ -755,11 +755,11 @@ if col1.button("🚀 EXECUTE"):
     # DISPLAY
     # --------------------------------------
     st.subheader("📊 Current Trends")
-    if res.rca_intel:
-    st.write(res.rca_intel)
+    
+    if res.rca_intel and str(res.rca_intel).strip().lower() != "none":
+        st.markdown(res.rca_intel)
     else:
-    st.info("No trend data available — retry or check API key")
-
+        st.info("⚠️ No trend data available. Try refining your prompt or check API keys.")
     if res.ai_concept:
         st.image(res.ai_concept)
         # --- PATCH: DOWNLOAD CONCEPT ---
