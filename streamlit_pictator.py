@@ -114,7 +114,7 @@ def fetch_real_website(brand, part="automotive"):
     try:
         # 🎯 Build smart query based on part
         if part == "seat":
-            query = f"{brand} car seat covers india buy OR site OR collection OR custom seat covers"
+            query = f"{brand} seat cover collection leather car seat cover product page"
         else:
             query = f"{brand} automotive official website OR products"
 
@@ -170,21 +170,24 @@ def extract_images_from_website(url):
 
         html = r.text
 
-        # find image URLs
         imgs = re.findall(r'<img[^>]+src="([^">]+)"', html)
 
-        clean_imgs = []
+        clean = []
         for img in imgs:
-            if any(x in img.lower() for x in ["seat", "cover", "interior"]):
+            if any(k in img.lower() for k in ["seat", "cover", "leather", "interior"]):
                 if img.startswith("//"):
                     img = "https:" + img
                 elif img.startswith("/"):
                     base = url.split("/")[0] + "//" + url.split("/")[2]
                     img = base + img
 
-                clean_imgs.append(img)
+                # remove icons/logos
+                if any(x in img.lower() for x in ["logo", "icon", "svg"]):
+                    continue
 
-        return clean_imgs[:3]
+                clean.append(img)
+
+        return list(dict.fromkeys(clean))[:4]
 
     except:
         return []
@@ -720,7 +723,8 @@ def thread_assets(res, prompt):
             params={"engine": "google_images", "q": prompt, "api_key": SERP_API_KEY},
             timeout=10
         )
-        res.market_photos = r.json().get("images_results", [])[:3]
+        def thread_assets(res, prompt):
+            res.ai_concept = hf_gen_image(enhance_prompt(final_prompt))
     except:
         res.market_photos = []
     res.ai_concept = hf_gen_image(enhance_prompt(final_prompt))
@@ -782,50 +786,7 @@ if col1.button("🚀 EXECUTE"):
         t1.join(); t2.join(); t3.join()
         status.update(label="✅ Analysis Complete", state="complete")
 
-    # --------------------------------------
-    # 🔥 FINAL IMAGE PIPELINE (UPGRADED)
-    # --------------------------------------
-    final_images = []
-    
-    # --------------------------------------
-    # 1️⃣ MARKET IMAGES (UNCHANGED)
-    # --------------------------------------
-    if res.market_photos:
-        for img_data in res.market_photos:
-            url = img_data.get("thumbnail") or img_data.get("original")
-            if url:
-                final_images.append(url)
-    
-    # --------------------------------------
-    # 2️⃣ AI GENERATED IMAGES (USING FINAL PROMPT ✅)
-    # --------------------------------------
-    while len(final_images) < 3:
-        dynamic_prompt = f"""
-        {final_prompt}, {random.choice(TREND_KEYWORDS)},
-        ultra modern automotive seat, india market, 2026 design,
-        premium materials, realistic lighting, 8k
-        """
-    
-        ai_img = hf_gen_image(enhance_prompt(dynamic_prompt))
-    
-        if ai_img:
-            final_images.append(ai_img)
-        else:
-            # ❌ If model fails, DO NOT break → try again
-            continue
-    
-    # --------------------------------------
-    # 3️⃣ FALLBACK (SMARTER)
-    # --------------------------------------
-    while len(final_images) < 3:
-        fallback_query = f"https://source.unsplash.com/600x400/?{final_prompt},{random.choice(TREND_KEYWORDS)}"
-        final_images.append(fallback_query)
-    
-    # --------------------------------------
-    # ✅ SAVE RESULTS
-    # --------------------------------------
-    res.final_images = final_images
-    
+        
     # --------------------------------------
     # 📊 COUNTING
     # --------------------------------------
@@ -1001,7 +962,7 @@ if col1.button("🚀 EXECUTE"):
     # --------------------------------------
     st.subheader("🎨 Seat Cover Design Directions")
     
-    designs = generate_design_blocks()
+    designs = generate_design_blocks(prompt)
     
     for d in designs:
         st.markdown(f"""
@@ -1065,30 +1026,6 @@ if col1.button("🚀 EXECUTE"):
     - Modular replaceable panels
     """)
     
-    # --------------------------------------
-    # 🖼 REAL WEBSITE-BASED IMAGES (PRO FIX)
-    # --------------------------------------
-    st.subheader("🖼 Real Market Designs (From Brand Websites)")
-    
-    all_display_items = indian + global_brands
-    
-    for item in all_display_items:
-        brand = item.get("Brand", "Unknown")
-        website = item.get("Website") or fetch_real_website(brand, "seat")
-    
-        st.markdown(f"### {brand}")
-        st.link_button("🌐 View Source Website", website)
-    
-        # 🔥 Extract REAL images from SAME website
-        real_imgs = extract_images_from_website(website)
-    
-        if real_imgs:
-            cols = st.columns(len(real_imgs))
-            for i, img in enumerate(real_imgs):
-                cols[i].image(img)
-        else:
-            st.warning("⚠️ No clean images found on source page")
-
 # --------------------------------------
 # RENDER (FAST STREAMING STYLE)
 # --------------------------------------
