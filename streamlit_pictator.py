@@ -369,6 +369,21 @@ def safe_json_extract(text):
 
     return []
 
+TRUSTED_DOMAINS = [
+    "autofurnish.com",
+    "autofit.in",
+    "autotextile.com",
+    "cncstitching.com",
+    "seatcoversunlimited.com",
+    "foamvilla.com",
+    "sa.made-in-china.com",
+    "autoclint.com",
+    "autoform.in",
+    "coverking.com",
+    "katzkin.com",
+    "amazon.in",
+    "cardekho.com",
+]
 # --------------------------------------
 # ✅ DOMAIN BRAND FILTER
 # --------------------------------------
