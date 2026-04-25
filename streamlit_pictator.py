@@ -137,11 +137,12 @@ def fetch_real_website(brand, part="automotive"):
             link = res.get("link", "").lower()
 
             # ✅ Prefer product / collection pages
-            if any(k in link for k in [
-                "seat-cover", "seat-cover", "car-seat-cover",
-                "collection", "custom-seat", "products"
-            ]):
-                return res.get("link")
+            if any(domain in link for domain in TRUSTED_DOMAINS):
+                if any(k in link.lower() for k in [
+                    "seat-cover", "seat-covers", "car-seat-cover",
+                    "collection", "custom-seat", "products"
+                ]):
+                    return link
 
         # --------------------------------------
         # 🥈 SECOND PRIORITY: Official site
@@ -163,31 +164,28 @@ def fetch_real_website(brand, part="automotive"):
 
     return None
 
-def extract_images_from_website(url):
+def get_clean_images(query):
     try:
-        headers = {"User-Agent": "Mozilla/5.0"}
-        r = requests.get(url, headers=headers, timeout=8)
+        r = requests.get(
+            "https://serpapi.com/search",
+            params={
+                "engine": "google_images",
+                "q": query + " car seat cover leather premium",
+                "api_key": SERP_API_KEY
+            },
+            timeout=10
+        )
 
-        html = r.text
-
-        imgs = re.findall(r'<img[^>]+src="([^">]+)"', html)
+        results = r.json().get("images_results", [])
 
         clean = []
-        for img in imgs:
-            if any(k in img.lower() for k in ["seat", "cover", "leather", "interior"]):
-                if img.startswith("//"):
-                    img = "https:" + img
-                elif img.startswith("/"):
-                    base = url.split("/")[0] + "//" + url.split("/")[2]
-                    img = base + img
+        for img in results:
+            url = img.get("original")
 
-                # remove icons/logos
-                if any(x in img.lower() for x in ["logo", "icon", "svg"]):
-                    continue
+            if url and any(k in url.lower() for k in ["seat", "cover", "leather"]):
+                clean.append(url)
 
-                clean.append(img)
-
-        return list(dict.fromkeys(clean))[:4]
+        return clean[:3]
 
     except:
         return []
@@ -1003,7 +1001,7 @@ if col1.button("🚀 EXECUTE"):
             st.link_button("🌐 View Real Collection", site)
     
             # 🔥 REAL IMAGES FROM SAME WEBSITE
-            imgs = extract_images_from_website(site)
+            imgs = get_clean_images(d["keyword"])
     
             if imgs:
                 cols = st.columns(len(imgs))
