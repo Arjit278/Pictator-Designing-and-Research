@@ -481,8 +481,8 @@ def normalize_specs(specs, prompt=""):
     # --------------------------------------
     return normalized
 
-if not specs:
-    st.warning("⚠️ No trusted suppliers found. Try refining prompt.")
+    if not specs:
+        st.warning("⚠️ No trusted suppliers found. Try refining prompt.")
 # --------------------------------------
 # 🎯 TREND KEYWORDS (NEW FIX)
 # --------------------------------------
