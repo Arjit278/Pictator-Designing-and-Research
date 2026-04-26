@@ -477,7 +477,7 @@ def normalize_specs(specs, prompt=""):
         })
 
     if not normalized:
-    st.warning("⚠️ No trusted suppliers found.")
+        st.warning("⚠️ No trusted suppliers found.")
 
     return normalized
     
