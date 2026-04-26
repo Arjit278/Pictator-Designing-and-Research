@@ -845,22 +845,22 @@ if col1.button("🚀 EXECUTE"):
 
        
     # --------------------------------------
-    # 🎨 HERO DESIGN IMAGE (FINAL - FULL PIPELINE)
+    # 🎨 HERO DESIGN IMAGE (FINAL - STABLE PIPELINE)
     # --------------------------------------
     st.subheader("🎨 Featured Design Concept")
     
-    # 🎯 STRONG PROMPT
+    # 🎯 STRONG PROMPT (balanced + realistic)
     strong_prompt = f"""
-    Luxury car seat cover design,
-    {car_model},
+    {car_model} car seat cover,
     {material} material,
     {stitching} stitching pattern,
-    {color} color combination,
+    {color} color,
     {use_case} style,
+    premium automotive interior,
     studio lighting,
     ultra realistic,
     NO logo, NO watermark,
-    focus on seat texture and stitching
+    focus on stitching and texture
     """
     
     # --------------------------------------
@@ -875,7 +875,7 @@ if col1.button("🚀 EXECUTE"):
         st.image(main_img)
     
     # --------------------------------------
-    # 3️⃣ SERP FALLBACK (YOUR LOGIC)
+    # 3️⃣ SERP FALLBACK (FILTERED)
     # --------------------------------------
     else:
         st.warning("⚠️ AI image failed — trying SERP fallback")
@@ -893,37 +893,37 @@ if col1.button("🚀 EXECUTE"):
     
             imgs = r.json().get("images_results", [])
     
-            clean = []
-            for im in imgs:
-                url = im.get("original")
-    
-                # 🔥 FILTER BAD IMAGES
-                if url and all(x not in url.lower() for x in ["logo", "icon", "svg"]):
-                    clean.append(url)
+            clean = [
+                im.get("original")
+                for im in imgs
+                if im.get("original") 
+                and all(x not in im.get("original").lower() for x in ["logo", "icon", "svg"])
+            ]
     
             if clean:
                 st.image(clean[0])
-    
-            # --------------------------------------
-            # 4️⃣ FINAL FALLBACK (SAFE)
-            # --------------------------------------
-            else:
-                fallback_imgs = get_clean_images(strong_prompt)
-    
-                if fallback_imgs:
-                    st.image(fallback_imgs[0])
-                else:
-                    st.error("❌ No image available")
-    
-        except Exception as e:
-            st.warning("⚠️ SERP failed — using backup")
-    
+
+        # --------------------------------------
+        # 4️⃣ FINAL FALLBACK (SAFE + GUARANTEED)
+        # --------------------------------------
+        else:
             fallback_imgs = get_clean_images(strong_prompt)
-    
+
             if fallback_imgs:
                 st.image(fallback_imgs[0])
             else:
-                st.error("❌ No image available")
+                st.warning("⚠️ Using default design image")
+                st.image("https://www.autofurnish.com/cdn/shop/products/AFSC-001.jpg")
+
+    except:
+        st.warning("⚠️ SERP failed — using backup")
+
+        fallback_imgs = get_clean_images(strong_prompt)
+
+        if fallback_imgs:
+            st.image(fallback_imgs[0])
+        else:
+            st.image("https://www.autofurnish.com/cdn/shop/products/AFSC-001.jpg")
 
     # --------------------------------------
     # ✅ FIXED DISPLAY (NO CRASH)
@@ -949,38 +949,56 @@ if col1.button("🚀 EXECUTE"):
     st.sidebar.download_button("📄 Download Full Report", report_text, f"report_{prompt[:10]}.txt", "text/plain")
 
     # --------------------------------------
-    # 🌍 MARKET INTELLIGENCE (CLEAN LINKS)
+    # 🌍 MARKET INTELLIGENCE (MERGED + CLEAN)
     # --------------------------------------
     st.subheader("🌍 Market Intelligence & Live Sourcing")
     
     links = []
-
-    for s in specs:
-        site = s.get("Website")
-        if site and site not in links:
-            links.append(site)
     
-    # fallback links
-    fallback_sites = [
-        "https://www.autofurnish.com",
+    # --------------------------------------
+    # 🧠 FROM SPECS (AI OUTPUT)
+    # --------------------------------------
+    if 'specs' in locals() and specs:
+        for item in specs:
+            brand = item.get("Brand", "Unknown")
+            desc = item.get("Description", "Automotive interior solution provider")
+            material = item.get("Material", "")
+            website = item.get("Website") or fetch_real_website(brand, "seat")
+    
+            if website and website not in links:
+                links.append(website)
+    
+                st.markdown(f"""
+    **{brand}**  
+    {desc}  
+    Material Focus: {material}  
+    🔗 {website}
+    """)
+    
+    # --------------------------------------
+    # 🔁 FALLBACK LINKS (ALWAYS SHOW 5–6)
+    # --------------------------------------
+    fallback_links = [
+        "https://www.autofurnish.com/collections/car-seat-covers",
+        "https://www.made-in-china.com/products-search/hot-china-products/Seat_Cover",
+        "https://www.ekrcover.com/uk/ekr-luxury-genuine-leather-custom-car-seat-covers",
+        "https://autogearup.com/best-nissan-rogue-seat-covers",
         "https://www.autofit.in",
         "https://www.autotextile.com",
         "https://www.cncstitching.com",
         "https://www.seatcoversunlimited.com",
         "https://www.foamvilla.com",
-        "https://www.amazon.in/s?k=car+seat+covers",
-        "https://www.flipkart.com/search?q=car+seat+covers",
+        "https://www.autofit.in",
         "https://www.coverking.com/seat-covers.html",
-        "https://www.carid.com/seat-covers.html"
+        "https://www.carid.com/seat-covers.html",
+        "https://www.amazon.in/s?k=car+seat+covers",
+        "https://www.flipkart.com/search?q=car+seat+covers"
     ]
     
-    for f in fallback_sites:
-        if f not in links:
-            links.append(f)
-    
-    for l in links[:6]:
-        st.markdown(f"🔗 {l}")
-    
+    for link in fallback_links:
+        if link not in links and len(links) < 6:
+            links.append(link)
+            st.markdown(f"🔗 {link}")    
     # --------------------------------------
     # 🔁 FILL UP TO 6 LINKS
     # --------------------------------------
