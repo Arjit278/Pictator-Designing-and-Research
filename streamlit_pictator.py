@@ -169,11 +169,13 @@ def fetch_real_website(brand, part="automotive"):
 
 def get_clean_images(query):
     try:
+        q = f"{query} car seat cover leather interior premium"
+
         r = requests.get(
             "https://serpapi.com/search",
             params={
                 "engine": "google_images",
-                "q": query + " car seat cover leather premium",
+                "q": q,
                 "api_key": SERP_API_KEY
             },
             timeout=10
@@ -185,7 +187,8 @@ def get_clean_images(query):
         for img in results:
             url = img.get("original")
 
-            if url and any(k in url.lower() for k in ["seat", "cover", "leather"]):
+            # ✅ filter garbage images
+            if url and all(x not in url.lower() for x in ["logo", "icon", "svg"]):
                 clean.append(url)
 
         return clean[:3]
@@ -451,12 +454,13 @@ def normalize_specs(specs, prompt=""):
         # --------------------------------------
         website = item.get("Website")
 
-        if not is_trusted(website):
+        # try fetch if missing
+        if not website:
             website = fetch_real_website(brand, detected_part)
-
-        # 🔥 FINAL CHECK — ONLY TRUSTED DOMAINS ALLOWED
-        if not is_trusted(website):
-            continue  # ❌ skip completely
+        
+        # only skip if STILL empty
+        if not website:
+            continue
 
         # --------------------------------------
         # 🧠 MATERIAL
@@ -839,58 +843,87 @@ if col1.button("🚀 EXECUTE"):
         res.ai_concept.save(buf_concept, format="PNG")
         st.download_button("💾 Save Concept Image", buf_concept.getvalue(), "concept.png", "image/png")
 
-   
+       
     # --------------------------------------
-# 🎨 HERO DESIGN IMAGE (FINAL FIX)
-# --------------------------------------
-st.subheader("🎨 Featured Design Concept")
-
-def generate_main_image(prompt):
+    # 🎨 HERO DESIGN IMAGE (FINAL - FULL PIPELINE)
+    # --------------------------------------
+    st.subheader("🎨 Featured Design Concept")
+    
+    # 🎯 STRONG PROMPT
     strong_prompt = f"""
     Luxury car seat cover design,
     {car_model},
     {material} material,
-    {stitching} quilted pattern,
-    {color} color scheme,
+    {stitching} stitching pattern,
+    {color} color combination,
+    {use_case} style,
     studio lighting,
     ultra realistic,
     NO logo, NO watermark,
     focus on seat texture and stitching
     """
-
-    # 1️⃣ AI
-    img = hf_gen_image(enhance_prompt(strong_prompt))
-    if img:
-        return img
-
-    # 2️⃣ SERP fallback
-    try:
-        r = requests.get(
-            "https://serpapi.com/search",
-            params={
-                "engine": "google_images",
-                "q": strong_prompt,
-                "api_key": SERP_API_KEY
-            },
-            timeout=10
-        )
-
-        imgs = r.json().get("images_results", [])
-
-        clean = []
-        for im in imgs:
-            url = im.get("original")
-            if url and all(x not in url.lower() for x in ["logo", "icon", "svg"]):
-                clean.append(url)
-
-        return clean[0] if clean else None
-
-    except:
-        return None
-
-
-clean_prompt = f"{car_model} {material} {stitching} seat cover {color} {use_case}"
-main_img = generate_main_image(clean_prompt)
+    
+    # --------------------------------------
+    # 1️⃣ AI IMAGE (HUGGING FACE)
+    # --------------------------------------
+    main_img = hf_gen_image(enhance_prompt(strong_prompt))
+    
+    # --------------------------------------
+    # 2️⃣ DISPLAY AI IMAGE
+    # --------------------------------------
+    if isinstance(main_img, Image.Image):
+        st.image(main_img)
+    
+    # --------------------------------------
+    # 3️⃣ SERP FALLBACK (YOUR LOGIC)
+    # --------------------------------------
+    else:
+        st.warning("⚠️ AI image failed — trying SERP fallback")
+    
+        try:
+            r = requests.get(
+                "https://serpapi.com/search",
+                params={
+                    "engine": "google_images",
+                    "q": strong_prompt,
+                    "api_key": SERP_API_KEY
+                },
+                timeout=10
+            )
+    
+            imgs = r.json().get("images_results", [])
+    
+            clean = []
+            for im in imgs:
+                url = im.get("original")
+    
+                # 🔥 FILTER BAD IMAGES
+                if url and all(x not in url.lower() for x in ["logo", "icon", "svg"]):
+                    clean.append(url)
+    
+            if clean:
+                st.image(clean[0])
+    
+            # --------------------------------------
+            # 4️⃣ FINAL FALLBACK (SAFE)
+            # --------------------------------------
+            else:
+                fallback_imgs = get_clean_images(strong_prompt)
+    
+                if fallback_imgs:
+                    st.image(fallback_imgs[0])
+                else:
+                    st.error("❌ No image available")
+    
+        except Exception as e:
+            st.warning("⚠️ SERP failed — using backup")
+    
+            fallback_imgs = get_clean_images(strong_prompt)
+    
+            if fallback_imgs:
+                st.image(fallback_imgs[0])
+            else:
+                st.error("❌ No image available")
 
 # --------------------------------------
 # ✅ FIXED DISPLAY (NO CRASH)
@@ -909,7 +942,7 @@ else:
     if fallback_imgs:
         st.image(fallback_imgs[0])
     else:
-        st.error("❌ No image available")    
+        st.error("❌ No image available")
             
     # --- PATCH: DOWNLOAD TEXT REPORT ---
     report_text = f"ANALYSIS: {prompt}\n\nTRENDS:\n{res.rca_intel}\n\nSPECS:\n{json.dumps(specs, indent=2)}"
@@ -929,7 +962,7 @@ else:
     
     # fallback links
     fallback_sites = [
-        "https://www."autofurnish.com",
+        "https://www.autofurnish.com",
         "https://www.autofit.in",
         "https://www.autotextile.com",
         "https://www.cncstitching.com",
