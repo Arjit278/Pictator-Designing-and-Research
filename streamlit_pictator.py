@@ -849,7 +849,7 @@ if col1.button("🚀 EXECUTE"):
     # --------------------------------------
     st.subheader("🎨 Featured Design Concept")
     
-    # 🎯 STRONG PROMPT (balanced + realistic)
+    # 🎯 STRONG PROMPT
     strong_prompt = f"""
     {car_model} car seat cover,
     {material} material,
@@ -875,7 +875,7 @@ if col1.button("🚀 EXECUTE"):
         st.image(main_img)
     
     # --------------------------------------
-    # 3️⃣ SERP FALLBACK (FILTERED)
+    # 3️⃣ FALLBACK PIPELINE
     # --------------------------------------
     else:
         st.warning("⚠️ AI image failed — trying SERP fallback")
@@ -896,34 +896,40 @@ if col1.button("🚀 EXECUTE"):
             clean = [
                 im.get("original")
                 for im in imgs
-                if im.get("original") 
+                if im.get("original")
                 and all(x not in im.get("original").lower() for x in ["logo", "icon", "svg"])
             ]
     
+            # --------------------------------------
+            # ✅ SERP SUCCESS
+            # --------------------------------------
             if clean:
                 st.image(clean[0])
     
-  # --------------------------------------
-  # 4️⃣ FINAL FALLBACK (SAFE + GUARANTEED)
-  # --------------------------------------
-  else:
-      fallback_imgs = get_clean_images(strong_prompt)
+            # --------------------------------------
+            # 4️⃣ FINAL FALLBACK (CLEAN IMAGES)
+            # --------------------------------------
+            else:
+                fallback_imgs = get_clean_images(strong_prompt)
     
-      if fallback_imgs:
-          st.image(fallback_imgs[0])
-      else:
-          st.warning("⚠️ Using default design image")
-          st.image("https://www.autofurnish.com/cdn/shop/products/AFSC-001.jpg")
-
-    except:
-        st.warning("⚠️ SERP failed — using backup")
-
-        fallback_imgs = get_clean_images(strong_prompt)
-
-        if fallback_imgs:
-            st.image(fallback_imgs[0])
-        else:
-            st.image("https://www.autofurnish.com/cdn/shop/products/AFSC-001.jpg")
+                if fallback_imgs:
+                    st.image(fallback_imgs[0])
+                else:
+                    st.warning("⚠️ Using default design image")
+                    st.image("https://www.autofurnish.com/cdn/shop/products/AFSC-001.jpg")
+    
+        # --------------------------------------
+        # ❌ SERP FAILED
+        # --------------------------------------
+        except Exception:
+            st.warning("⚠️ SERP failed — using backup")
+    
+            fallback_imgs = get_clean_images(strong_prompt)
+    
+            if fallback_imgs:
+                st.image(fallback_imgs[0])
+            else:
+                st.image("https://www.autofurnish.com/cdn/shop/products/AFSC-001.jpg")
 
     # --------------------------------------
     # ✅ FIXED DISPLAY (NO CRASH)
