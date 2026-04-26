@@ -902,18 +902,18 @@ if col1.button("🚀 EXECUTE"):
     
             if clean:
                 st.image(clean[0])
-
-        # --------------------------------------
-        # 4️⃣ FINAL FALLBACK (SAFE + GUARANTEED)
-        # --------------------------------------
-        else:
-            fallback_imgs = get_clean_images(strong_prompt)
-
-            if fallback_imgs:
-                st.image(fallback_imgs[0])
-            else:
-                st.warning("⚠️ Using default design image")
-                st.image("https://www.autofurnish.com/cdn/shop/products/AFSC-001.jpg")
+    
+  # --------------------------------------
+  # 4️⃣ FINAL FALLBACK (SAFE + GUARANTEED)
+  # --------------------------------------
+  else:
+      fallback_imgs = get_clean_images(strong_prompt)
+    
+      if fallback_imgs:
+          st.image(fallback_imgs[0])
+      else:
+          st.warning("⚠️ Using default design image")
+          st.image("https://www.autofurnish.com/cdn/shop/products/AFSC-001.jpg")
 
     except:
         st.warning("⚠️ SERP failed — using backup")
