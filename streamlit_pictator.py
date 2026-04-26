@@ -90,13 +90,59 @@ def generate_ai_image(prompt, model_id):
         return None
 
 def fetch_market_references(query):
-    """REFERENCE: Real-World Market Photos"""
     try:
-        params = {"engine": "google_images", "q": f"{query} luxury seat cover 2026", "api_key": SERP_API_KEY, "num": 10}
+        # Increase num to 40 to get a wide variety of sources to filter from
+        params = {
+            "engine": "google_images", 
+            "q": f"{query} car seat covers leather", 
+            "api_key": SERP_API_KEY, 
+            "num": 40
+        }
         r = requests.get("https://serpapi.com/search", params=params, timeout=10)
         results = r.json().get("images_results", [])
-        return [{"img": i["original"], "link": i["link"], "src": i.get("source", "Market")} for i in results if "link" in i][:6]
-    except:
+        
+        filtered_refs = []
+        used_domains = set() # This tracks the 'source' name to prevent repetition
+
+        for i in results:
+            source_name = i.get("source", "").strip()
+            link = i.get("link", "").lower()
+            
+            # 1. Check if we've already used this specific source name (e.g., Elegant Auto)
+            if source_name in used_domains:
+                continue
+            
+            # 2. Check if the link belongs to our TRUSTED_DOMAINS list
+            is_trusted = any(td in link for td in TRUSTED_DOMAINS)
+            
+            if is_trusted:
+                filtered_refs.append({
+                    "img": i["original"], 
+                    "link": i["link"], 
+                    "src": source_name
+                })
+                used_domains.add(source_name) # Lock this domain so it isn't used again
+            
+            # Stop once we have 6 unique high-quality sources
+            if len(filtered_refs) >= 6:
+                break
+        
+        # --- FALLBACK: If we still don't have 6 unique links after checking trusted ones ---
+        if len(filtered_refs) < 6:
+            for i in results:
+                source_name = i.get("source", "").strip()
+                if source_name not in used_domains:
+                    filtered_refs.append({
+                        "img": i["original"], 
+                        "link": i["link"], 
+                        "src": source_name
+                    })
+                    used_domains.add(source_name)
+                if len(filtered_refs) >= 6: break
+                
+        return filtered_refs
+    except Exception as e:
+        st.sidebar.error(f"Search Fallback Engaged: {e}")
         return []
 
 # --------------------------------------
