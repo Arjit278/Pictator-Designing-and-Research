@@ -1021,41 +1021,7 @@ if col1.button("🚀 EXECUTE"):
     for link in links[:6]:
         st.markdown(f"🔗 {link}")
     
-    # --------------------------------------
-    # 🧠 TEXT STYLE OUTPUT
-    # --------------------------------------
-    st.markdown("### 🇮🇳 Indian Market Picks")
-    
-    for item in indian:
-        brand = item.get("Brand", "Unknown")
-        desc = item.get("Description", "Automotive interior solution provider")
-        material = item.get("Material", "")
-        website = item.get("Website") or fetch_real_website(brand, "seat")
-    
-        st.markdown(f"""
-    **{brand}**  
-    {desc}  
-    Material Focus: {material}  
-    🔗 {website}
-    """)
-    
-    st.markdown("---")
-    
-    st.markdown("### 🌍 International Benchmarks")
-    
-    for item in global_brands:
-        brand = item.get("Brand", "Unknown")
-        desc = item.get("Description", "Global automotive design supplier")
-        material = item.get("Material", "")
-        website = item.get("Website") or fetch_real_website(brand, "seat")
-    
-        st.markdown(f"""
-    **{brand}**  
-    {desc}  
-    Material Focus: {material}  
-    🔗 {website}
-    """)
-    
+        
     # --------------------------------------
     # 🎨 DYNAMIC DESIGN PATTERNS (AI DRIVEN)
     # --------------------------------------
