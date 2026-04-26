@@ -476,13 +476,11 @@ def normalize_specs(specs, prompt=""):
             "Website": website
         })
 
-    # --------------------------------------
-    # 🚨 NO FALLBACKS — PURE OUTPUT ONLY
-    # --------------------------------------
-    return normalized
+    if not normalized:
+    st.warning("⚠️ No trusted suppliers found.")
 
-    if not specs:
-        st.warning("⚠️ No trusted suppliers found. Try refining prompt.")
+    return normalized
+    
 # --------------------------------------
 # 🎯 TREND KEYWORDS (NEW FIX)
 # --------------------------------------
@@ -842,100 +840,111 @@ if col1.button("🚀 EXECUTE"):
         st.download_button("💾 Save Concept Image", buf_concept.getvalue(), "concept.png", "image/png")
 
    
-        # --------------------------------------
-    # 🎨 HERO DESIGN IMAGE (FINAL FIX)
     # --------------------------------------
-    st.subheader("🎨 Featured Design Concept")
-    
-    def generate_main_image(prompt):
-        # 1️⃣ Try AI
-        img = hf_gen_image(enhance_prompt(prompt))
-        if img:
-            return img
-    
-        # 2️⃣ Fallback → SERP
-        try:
-            r = requests.get(
-                "https://serpapi.com/search",
-                params={
-                    "engine": "google_images",
-                    "q": prompt + " car seat cover leather interior premium",
-                    "api_key": SERP_API_KEY
-                },
-                timeout=10
-            )
-    
-            imgs = r.json().get("images_results", [])
-    
-            for im in imgs:
-                url = im.get("original")
-                if url and any(k in url.lower() for k in ["seat", "cover", "interior"]):
-                    return url
-        except:
-            pass
-    
+# 🎨 HERO DESIGN IMAGE (FINAL FIX)
+# --------------------------------------
+st.subheader("🎨 Featured Design Concept")
+
+def generate_main_image(prompt):
+    strong_prompt = f"""
+    {prompt},
+    car seat cover interior,
+    {material}, {stitching} stitching,
+    {color} color,
+    premium automotive interior,
+    no logo, no watermark,
+    ultra realistic, 8k
+    """
+
+    # 1️⃣ AI
+    img = hf_gen_image(enhance_prompt(strong_prompt))
+    if img:
+        return img
+
+    # 2️⃣ SERP fallback
+    try:
+        r = requests.get(
+            "https://serpapi.com/search",
+            params={
+                "engine": "google_images",
+                "q": strong_prompt,
+                "api_key": SERP_API_KEY
+            },
+            timeout=10
+        )
+
+        imgs = r.json().get("images_results", [])
+
+        clean = []
+        for im in imgs:
+            url = im.get("original")
+            if url and all(x not in url.lower() for x in ["logo", "icon", "svg"]):
+                clean.append(url)
+
+        return clean[0] if clean else None
+
+    except:
         return None
-    
-    
-    clean_prompt = f"{car_model} car seat cover {material} {stitching} {color} {use_case}"
-    main_img = generate_main_image(clean_prompt)
-    
-    # --------------------------------------
-    # ✅ FIXED INDENTATION (IMPORTANT)
-    # --------------------------------------
-    if isinstance(main_img, Image.Image):
-        st.image(main_img)
-    
-    elif isinstance(main_img, str) and main_img.startswith("http"):
-        st.image(main_img)
-    
-    else:
-        st.warning("⚠️ AI image failed — loading fallback")
-    
-        fallback_imgs = get_clean_images(clean_prompt)
-    
+
+
+clean_prompt = f"{car_model} {material} {stitching} seat cover {color} {use_case}"
+main_img = generate_main_image(clean_prompt)
+
+# --------------------------------------
+# ✅ FIXED DISPLAY (NO CRASH)
+# --------------------------------------
+if isinstance(main_img, Image.Image):
+    st.image(main_img)
+
+elif isinstance(main_img, str) and main_img.startswith("http"):
+    st.image(main_img)
+
+else:
+    st.warning("⚠️ AI image failed — loading fallback")
+
+    fallback_imgs = get_clean_images(clean_prompt)
+
     if fallback_imgs:
-         st.image(fallback_imgs[0])
+        st.image(fallback_imgs[0])
     else:
-         st.error("❌ No image available")
-    
+        st.error("❌ No image available")    
             
     # --- PATCH: DOWNLOAD TEXT REPORT ---
     report_text = f"ANALYSIS: {prompt}\n\nTRENDS:\n{res.rca_intel}\n\nSPECS:\n{json.dumps(specs, indent=2)}"
     st.sidebar.download_button("📄 Download Full Report", report_text, f"report_{prompt[:10]}.txt", "text/plain")
 
     # --------------------------------------
-    # 🧠 DYNAMIC TEXT OUTPUT (NO FIXED BRANDS)
+    # 🌍 MARKET INTELLIGENCE (CLEAN LINKS)
     # --------------------------------------
     st.subheader("🌍 Market Intelligence & Live Sourcing")
     
+    links = []
     
     # --------------------------------------
-    # 🎯 DYNAMIC SPLIT (INDIA vs GLOBAL)
+    # 🔍 COLLECT FROM SPECS
     # --------------------------------------
-    random.shuffle(specs)
-    
-    indian = []
-    global_brands = []
-    
     for s in specs:
-        name = str(s.get("Brand", "")).lower()
+        brand = s.get("Brand")
+        site = s.get("Website") or fetch_real_website(brand, "seat")
     
-        if any(k in name for k in ["india", "auto", "accessories", "furnish", "form"]):
-            indian.append(s)
-        else:
-            global_brands.append(s)
+        if site and site not in links:
+            links.append(site)
     
-    # fallback balancing
-    combined = indian + global_brands
-    while len(indian) < 3 and combined:
-        indian.append(combined.pop(0))
+    # --------------------------------------
+    # 🔁 FILL UP TO 6 LINKS
+    # --------------------------------------
+    tries = 0
+    while len(links) < 6 and tries < 10:
+        extra = fetch_real_website(prompt.split()[0], "seat")
+        if extra and extra not in links:
+            links.append(extra)
+        tries += 1
     
-    while len(global_brands) < 3 and combined:
-        global_brands.append(combined.pop(0))
-    
-    indian = indian[:3]
-    global_brands = global_brands[:3]
+    # --------------------------------------
+    # 🎯 DISPLAY CLEAN LINKS
+    # --------------------------------------
+    for link in links[:6]:
+        st.markdown(f"🔗 {link}")
     
     # --------------------------------------
     # 🧠 TEXT STYLE OUTPUT
@@ -1022,8 +1031,8 @@ if col1.button("🚀 EXECUTE"):
             st.link_button("🌐 View Real Collection", site)
     
             # 🔥 REAL IMAGES FROM SAME WEBSITE
-            unique_query = f"{d['keyword']} {random.randint(1,10000)}"
-            imgs = get_clean_images(unique_query)
+            query = f"{d['keyword']} {material} {color} car interior {random.randint(1,9999)}"
+            imgs = get_clean_images(query)
     
             if imgs:
                 cols = st.columns(len(imgs))
