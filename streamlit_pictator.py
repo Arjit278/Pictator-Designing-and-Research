@@ -925,24 +925,24 @@ if col1.button("🚀 EXECUTE"):
             else:
                 st.error("❌ No image available")
 
-# --------------------------------------
-# ✅ FIXED DISPLAY (NO CRASH)
-# --------------------------------------
-if isinstance(main_img, Image.Image):
-    st.image(main_img)
-
-elif isinstance(main_img, str) and main_img.startswith("http"):
-    st.image(main_img)
-
-else:
-    st.warning("⚠️ AI image failed — loading fallback")
-
-    fallback_imgs = get_clean_images(clean_prompt)
-
-    if fallback_imgs:
-        st.image(fallback_imgs[0])
+    # --------------------------------------
+    # ✅ FIXED DISPLAY (NO CRASH)
+    # --------------------------------------
+    if isinstance(main_img, Image.Image):
+        st.image(main_img)
+    
+    elif isinstance(main_img, str) and main_img.startswith("http"):
+        st.image(main_img)
+    
     else:
-        st.error("❌ No image available")
+        st.warning("⚠️ AI image failed — loading fallback")
+    
+        fallback_imgs = get_clean_images(clean_prompt)
+    
+        if fallback_imgs:
+            st.image(fallback_imgs[0])
+        else:
+            st.error("❌ No image available")
             
     # --- PATCH: DOWNLOAD TEXT REPORT ---
     report_text = f"ANALYSIS: {prompt}\n\nTRENDS:\n{res.rca_intel}\n\nSPECS:\n{json.dumps(specs, indent=2)}"
