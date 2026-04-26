@@ -847,13 +847,15 @@ st.subheader("🎨 Featured Design Concept")
 
 def generate_main_image(prompt):
     strong_prompt = f"""
-    {prompt},
-    car seat cover interior,
-    {material}, {stitching} stitching,
-    {color} color,
-    premium automotive interior,
-    no logo, no watermark,
-    ultra realistic, 8k
+    Luxury car seat cover design,
+    {car_model},
+    {material} material,
+    {stitching} quilted pattern,
+    {color} color scheme,
+    studio lighting,
+    ultra realistic,
+    NO logo, NO watermark,
+    focus on seat texture and stitching
     """
 
     # 1️⃣ AI
@@ -919,16 +921,32 @@ else:
     st.subheader("🌍 Market Intelligence & Live Sourcing")
     
     links = []
-    
-    # --------------------------------------
-    # 🔍 COLLECT FROM SPECS
-    # --------------------------------------
+
     for s in specs:
-        brand = s.get("Brand")
-        site = s.get("Website") or fetch_real_website(brand, "seat")
-    
+        site = s.get("Website")
         if site and site not in links:
             links.append(site)
+    
+    # fallback links
+    fallback_sites = [
+        "https://www."autofurnish.com",
+        "https://www.autofit.in",
+        "https://www.autotextile.com",
+        "https://www.cncstitching.com",
+        "https://www.seatcoversunlimited.com",
+        "https://www.foamvilla.com",
+        "https://www.amazon.in/s?k=car+seat+covers",
+        "https://www.flipkart.com/search?q=car+seat+covers",
+        "https://www.coverking.com/seat-covers.html",
+        "https://www.carid.com/seat-covers.html"
+    ]
+    
+    for f in fallback_sites:
+        if f not in links:
+            links.append(f)
+    
+    for l in links[:6]:
+        st.markdown(f"🔗 {l}")
     
     # --------------------------------------
     # 🔁 FILL UP TO 6 LINKS
