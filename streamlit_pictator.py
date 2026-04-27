@@ -16,6 +16,14 @@ OPENROUTER_API_KEY = st.secrets.get("OPENROUTER_API_KEY", "")
 SERP_API_KEY = st.secrets.get("SERP_API_KEY", "")
 HF_TOKEN = st.secrets.get("HF_TOKEN", "")
 
+# --- CEO TRUSTED DOMAIN LIST (2026 Master List) ---
+TRUSTED_DOMAINS = [
+    "autofurnish.com", "autofit.in", "autotextile.com", "cncstitching.com",
+    "seatcoversunlimited.com", "foamvilla.com", "sa.made-in-china.com",
+    "autoclint.com", "autoform.in", "coverking.com", "katzkin.com",
+    "amazon.in", "cardekho.com", "elegantautoretail.com", "carwale.com"
+]
+
 st.title("🏎️ Pictator Pro – CEO Engineering Suite")
 st.caption("Strategic Parallel RCA | Multithreaded Design | 2026 Material Intel")
 
