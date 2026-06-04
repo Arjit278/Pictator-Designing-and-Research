@@ -293,7 +293,7 @@ if st.button("🚀 EXECUTE FULL SUITE"):
         st.write(f"🎨 Generating {num_images} AI Design Concept(s)...")
         
         for i in range(num_images):
-            # 1. Determine Piping & Stitching Selection for this iteration
+            # 1. Determine Piping & Stitching Selection with Hyper-Isolated Prompt Guardrails
             current_piping = "Standard"
             current_stitching = "Standard"
             piping_phrase = ""
@@ -301,11 +301,13 @@ if st.button("🚀 EXECUTE FULL SUITE"):
             
             if enable_piping and piping_colors:
                 current_piping = piping_colors[i % len(piping_colors)]
-                piping_phrase = f" highly visible {current_piping} piping,"
+                # Prevents color bleeding by strictly assigning the color ONLY to perimeter borders
+                piping_phrase = f" The solid outer border edge piping must be colored strictly and exclusively in {current_piping}."
                 
             if enable_stitching and stitching_colors:
                 current_stitching = stitching_colors[i % len(stitching_colors)]
-                stitching_phrase = f" luxury {current_stitching} contrast stitching,"
+                # Forces the model to separate thread lines from edge leather piping
+                stitching_phrase = f" Distinct from the piping, all interior seam stitching must be sewn explicitly with {current_stitching} colored thread."
                 
             accent_phrase = f"{piping_phrase}{stitching_phrase}"
             
@@ -314,7 +316,7 @@ if st.button("🚀 EXECUTE FULL SUITE"):
             quilt_phrase = ""
             if quilt_designs:
                 current_quilt = quilt_designs[i % len(quilt_designs)]
-                quilt_phrase = f" featuring premium {current_quilt} quilt design elements,"
+                quilt_phrase = f" featuring premium {current_quilt} quilt elements on the center inserts,"
             
             # 2. Determine Strict Spatial Patch Logic
             patch_phrase = ""
@@ -323,18 +325,18 @@ if st.button("🚀 EXECUTE FULL SUITE"):
             elif patch_loc == "Seat Back Bolsters":
                 patch_phrase = f" broad {patch_color} structural side strips positioned exclusively on the left and right vertical side bolsters of the seat back (keeping center clear),"
             elif patch_loc == "Seat Base/Seat Pan":
-                patch_phrase = f" broad {patch_color} structural side strips positioned exclusively on the left and right horizontal base side bolsters of the seat base, main, flat horizontal patch you sit on (keeping center clear),"
+                patch_phrase = f" broad {patch_color} structural side strips positioned exclusively on the left and right horizontal base side bolsters of the seat base (keeping center clear),"
             elif patch_loc == "Bolsters":
-                patch_phrase = f" broad {patch_color} These are the raised, padded side sections on the backrest and bottom cushion on horizontal base center bolsters of the seat base, main, flat horizontal patch you sit on (keeping side clear),"
+                patch_phrase = f" broad {patch_color} padded side sections on the backrest and horizontal base center bolsters (keeping center inserts clear),"
             elif patch_loc == "Back side Bolsters+base side Bolsters":
                 patch_phrase = f" broad {patch_color} structural side patches running exclusively along the full outer side bolsters of both the seat back and the seat base (left and right edges only, keeping center clear),"
             
-            # 3. RE-ENGINEERED PROMPT
+            # 3. FINAL RE-ENGINEERED PROMPT: Notice structural separation
             iteration_prompt = (
-                f"Professional automotive interior photography, {car} custom seat covers. "
-                f"STRICT STRUCTURAL REQUIREMENTS:{patch_phrase}{accent_phrase}{quilt_phrase} "
-                f"Base design: {pattern} pattern, premium {material}, {colors} theme. "
-                f"{custom_instruction}. {lighting} lighting, 8k ultra-realistic, material macro detail."
+                f"Professional close-up automotive interior photography, {car} custom seat covers. "
+                f"CRITICAL DESIGN RULES:{patch_phrase}{accent_phrase}{quilt_phrase} "
+                f"Base design template: {pattern} pattern layout, premium {material} fabrication, {colors} primary colorway. "
+                f"{custom_instruction}. {lighting} lighting matrix, 8k ultra-realistic studio output, material macro fabric detail."
             )
             
             # Generate Image (Handling Dictionary Config)
