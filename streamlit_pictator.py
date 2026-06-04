@@ -256,7 +256,7 @@ with accent_cols[0]:
         piping_colors = st.multiselect(
             "Select Piping Colors (Cycles through selections per generated image)",
             ["Tarocco Orange", "Gold", "Peach", "Metallic Silver", "Sky Blue", "Gloss Black", "Chalk/Off-White", "Alabaster Cream", "Matching Contrast", "Magenta", "Custom"],
-            default=["Orange", "Gold", "Peach"],
+            default=["Tarocco Orange", "Gold", "Peach"], # Corrected default to match available options
             key="piping_colors_select"
         )
     else:
@@ -268,7 +268,7 @@ with accent_cols[1]:
         stitching_colors = st.multiselect(
             "Select Stitching Colors (Cycles through selections per generated image)",
             ["Burnt Orange", "Austin Gold/Kyalami Gold", "Metallic Silver", "Salmon Peach/Desert Sand", "Electric Blue", "Obsidian Black/Piano Gloss Black", "Yas Marina-Blue/Miami-Blue", "True White", "Racing Yellow", "Macadamia/Alabaster Cream", "Rubystone Magenta/Viola Parsifae"],
-            default=["Orange", "Gold", "Peach"],
+            default=["Burnt Orange", "Austin Gold/Kyalami Gold", "Salmon Peach/Desert Sand"], # Corrected defaults to match available options
             key="stitching_colors_select"
         )
     else:
