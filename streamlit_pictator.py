@@ -152,15 +152,17 @@ def fetch_market_references(query):
             is_pinterest = "pinterest" in link or "pinterest" in source_name.lower()
             is_trusted = any(td in link for td in TRUSTED_DOMAINS)
             
-            if is_pinterest and len(pinterest_refs) < 2:
+            # Adjusted limit to 3 to populate your top row layout perfectly
+            if is_pinterest and len(pinterest_refs) < 3:
                 pinterest_refs.append({
                     "img": i["original"], 
                     "link": i["link"], 
-                    "src": source_name
+                    "src": "Pinterest" if "pinterest" not in source_name.lower() else source_name
                 })
                 used_domains.add(source_name)
                 
-            elif is_trusted and not is_pinterest and len(trusted_refs) < 4:
+            # Adjusted limit to 3 to populate your bottom factory row perfectly
+            elif is_trusted and not is_pinterest and len(trusted_refs) < 3:
                 trusted_refs.append({
                     "img": i["original"], 
                     "link": i["link"], 
@@ -176,11 +178,13 @@ def fetch_market_references(query):
         if len(filtered_refs) < 6:
             for i in results:
                 source_name = i.get("source", "").strip()
+                link = i.get("link", "").lower()
                 if source_name not in used_domains:
+                    is_pinterest = "pinterest" in link or "pinterest" in source_name.lower()
                     filtered_refs.append({
                         "img": i["original"], 
                         "link": i["link"], 
-                        "src": source_name
+                        "src": "Pinterest" if is_pinterest and "pinterest" not in source_name.lower() else source_name
                     })
                     used_domains.add(source_name)
                 if len(filtered_refs) >= 6: break
