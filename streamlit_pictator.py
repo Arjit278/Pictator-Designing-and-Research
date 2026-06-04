@@ -206,7 +206,7 @@ with st.expander("🧠 Smart Design Configurator (2026 Specs)", expanded=True):
     colA, colB, colC = st.columns(3)
     with colA:
         car = st.selectbox("Vehicle", ["Maruti Wagon R", "Maruti Grand Vitara", "Custom/Other"])
-        pattern = st.selectbox("Stitching", ["Ultra-Quilt Diamond", "Hex-Cell", "Puff", "Minimalist Flat"])
+        pattern = st.selectbox("Stitching", ["Hex-Cell", "Puff", "Minimalist Flat"])
     with colB:
         material = st.selectbox("Material", ["1200 GSM Nappa", "Cotton", "Synthetic Leather", "Carbon Fiber Leather"])
         colors = st.text_input("Colorway", value="Tan & Charcoal")
@@ -224,18 +224,18 @@ patch_cols = st.columns(2)
 with patch_cols[0]:
     patch_loc = st.selectbox(
         "Patch Support Location", 
-        ["None", "Shoulder Support", "Seat Back Bolsters", "Back side Bolsters+base side Bolsters"], 
+        ["None", "Shoulder Support", "Seat Back Bolsters", "Seat Base/Seat Pan", "Bolsters", "Back side Bolsters+base side Bolsters", "Custom-Prompt Based"], 
         help="Select structural accent location for the seat cover."
     )
     quilt_designs = st.multiselect(
         "Select Quilt Designs (Cycles through selections per generated image)",
-        ["Elongated Hexagons & Hex-Stitch", "Minimalist Channel Tucks", "Perforated Micro-Quilting", "Custom"],
+        ["Elongated Hexagons & Hex-Stitch", "Ultra-Quilt Diamond", "Minimalist Channel Tucks", "Perforated Micro-Quilting", "Custom-Prompt Based"],
         default=["Elongated Hexagons & Hex-Stitch"]
     )
 with patch_cols[1]:
     patch_color = st.selectbox(
         "Patch Color", 
-        ["White", "Beige", "Cream", "Grey", "Silver", "Blue", "Red", "Black"], 
+        ["White", "Beige", "Cream", "Grey", "Silver", "Blue", "Red", "Black", "Custom-Prompt Based"], 
         disabled=(patch_loc == "None")
     )
 
@@ -250,7 +250,7 @@ enable_accents = st.toggle("Enable Dynamic Custom Piping & Stitching", value=Tru
 if enable_accents:
     accent_colors = st.multiselect(
         "Select Accent Colors (Cycles through selections per generated image)",
-        ["Orange", "Gold", "Peach", "Sky Blue", "Black", "White", "Cream", "Magenta"],
+        ["Orange", "Gold", "Peach", "Sky Blue", "Black", "White", "Cream", "Magenta", "Custom-Prompt Based"],
         default=["Orange", "Gold", "Peach"]
     )
 else:
@@ -294,6 +294,10 @@ if st.button("🚀 EXECUTE FULL SUITE"):
                 patch_phrase = f" broad {patch_color} structural side patches positioned exclusively on the upper shoulder bolsters (left and right edges only, keeping center clear),"
             elif patch_loc == "Seat Back Bolsters":
                 patch_phrase = f" broad {patch_color} structural side strips positioned exclusively on the left and right vertical side bolsters of the seat back (keeping center clear),"
+            elif patch_loc == "Seat Base/Seat Pan":
+                patch_phrase = f" broad {patch_color} structural side strips positioned exclusively on the left and right horizontal base side bolsters of the seat base, main, flat horizontal patch you sit on (keeping center clear),"
+            elif patch_loc == "Bolsters":
+                patch_phrase = f" broad {patch_color}  These are the raised, padded side sections on the backrest and bottom cushion on horizontal base center bolsters of the seat base, main, flat horizontal patch you sit on (keeping side clear),"    
             elif patch_loc == "Back side Bolsters+base side Bolsters":
                 patch_phrase = f" broad {patch_color} structural side patches running exclusively along the full outer side bolsters of both the seat back and the seat base (left and right edges only, keeping center clear),"
             
