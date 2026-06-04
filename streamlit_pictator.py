@@ -374,11 +374,28 @@ if st.button("🚀 EXECUTE FULL SUITE"):
     with col_left:
         st.subheader("🌍 Verified Market References & Live Shop Links")
         if market_refs:
-            m_cols = st.columns(3)
-            for idx, ref in enumerate(market_refs):
-                with m_cols[idx % 3]:
-                    st.image(ref["img"], caption=f"Ref from {ref['src']}", use_container_width=True)
-                    st.link_button(f"🔗 View on {ref['src']}", ref["link"])
+            # Separate Pinterest trends from mainstream retail domains
+            pin_refs = [r for r in market_refs if "pinterest" in r["src"].lower()]
+            other_refs = [r for r in market_refs if r not in pin_refs]
+            
+            # 📌 Row 1: Dedicated 3-Column Pinterest Layout
+            if pin_refs:
+                st.markdown("#### 📌 Top Pinterest Design Anchors (2026 Trends)")
+                m_cols_pin = st.columns(3)
+                for idx, ref in enumerate(pin_refs[:3]):
+                    with m_cols_pin[idx]:
+                        st.image(ref["img"], caption="Trend Reference", use_container_width=True)
+                        st.link_button("🔗 View on Pinterest", ref["link"])
+                st.write("") # Spacer
+            
+            # 🏢 Row 2: Standard Industry Domains
+            if other_refs:
+                st.markdown("#### 🏢 Factory & OEM Live Specifications")
+                m_cols_other = st.columns(3)
+                for idx, ref in enumerate(other_refs[:3]):
+                    with m_cols_other[idx % 3]:
+                        st.image(ref["img"], caption=f"Ref from {ref['src']}", use_container_width=True)
+                        st.link_button(f"🔗 View on {ref['src']}", ref["link"])
                     
     with col_right:
         st.subheader("📈 Flashmind Analysis")
