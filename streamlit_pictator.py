@@ -40,7 +40,7 @@ with st.sidebar:
         user = st.text_input("Username")
         pwd = st.text_input("Password", type="password")
         if st.button("Login"):
-            if user == "Harmony" and pwd == "Harmony_pictator123":
+            if user == "Harmony" and pwd == "Harmony/Pictator123":
                 st.session_state.authenticated = True
                 st.rerun()
             else:
