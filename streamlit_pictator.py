@@ -259,7 +259,7 @@ with accent_cols[0]:
     if enable_piping:
         piping_colors = st.multiselect(
             "Select Piping Colors (Cycles through selections per generated image)",
-            ["Tarocco Orange", "Gold", "Peach", "Metallic Silver", "Sky Blue", "Gloss Black", "Chalk/Off-White", "Alabaster Cream", "Matching Contrast", "Magenta", "Custom"],
+            ["Tarocco Orange", "Austin Gold", "Desert Sand/Peach", "Metallic Silver", "Sky Blue", "Gloss Black", "Chalk/Off-White", "Alabaster Cream", "Matching Contrast", "Magenta", "Custom"],
             default=["Tarocco Orange", "Gold", "Peach"], # Corrected default to match available options
             key="piping_colors_select"
         )
