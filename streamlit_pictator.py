@@ -93,6 +93,7 @@ def call_openrouter(prompt):
 def generate_ai_image(prompt, model_config):
     """GENERATE: Pure AI Design Concept"""
     try:
+        # Dynamically unpack based on config type
         if isinstance(model_config, str):
             model_id = model_config
             provider = "huggingface"
@@ -101,6 +102,7 @@ def generate_ai_image(prompt, model_config):
             provider = model_config.get("provider", "huggingface")
 
         if provider == "google-imagen":
+            # Gemini / Google Imagen Integration
             url = f"https://generativelanguage.googleapis.com/v1beta/models/{model_id}:predict?key={GEMINI_API_KEY}"
             headers = {"Content-Type": "application/json"}
             payload = {
@@ -118,6 +120,7 @@ def generate_ai_image(prompt, model_config):
                 st.error(f"Gemini Generation Failed: HTTP {response.status_code}")
                 return None
         else:
+            # Hugging Face Integration
             client = InferenceClient(model=model_id, token=HF_TOKEN)
             return client.text_to_image(prompt, width=1024, height=768)
     except Exception as e:
@@ -228,20 +231,50 @@ with patch_cols[0]:
         help="Select structural accent location for the seat cover."
     )
     quilt_designs = st.multiselect(
-        "Select Quilt Designs (Cycles through selections per generated image)",
-        ["Elongated Hexagons & Hex-Stitch", "Ultra-Quilt Diamond", "Minimalist Channel Tucks", "Perforated Micro-Quilting", "Custom-Prompt Based"],
+        "Select Quilt Designs (Cycles through selections per generated image)", 
+        ["Elongated Hexagons & Hex-Stitch", "Ultra-Quilt Diamond", "Minimalist Channel Tucks", "Perforated Micro-Quilting", "Custom-Prompt Based"], 
         default=["Elongated Hexagons & Hex-Stitch"]
     )
 with patch_cols[1]:
     patch_color = st.selectbox(
         "Patch Color", 
-        ["Ivory White","Neon Lime/Cyber Yellow" "Beige", "Cream", "Slate Grey", "Silver", "Blue", "Crimson Red", "Black", "Tan/Saddle Brown", "Custom-Prompt Based"], 
+        ["Ivory White", "Neon Lime/Cyber Yellow", "Beige", "Cream", "Slate Grey", "Silver", "Blue", "Crimson Red", "Black", "Tan/Saddle Brown", "Custom-Prompt Based"], 
         disabled=(patch_loc == "None")
     )
 
 st.divider()
 
-custom pipig and sti
+# ==========================================
+# 🧵 PIPING & STITCHING DETAILS
+# ==========================================
+st.markdown("### 🧵 Accent Details (Piping & Stitching)")
+accent_cols = st.columns(2)
+
+with accent_cols[0]:
+    enable_piping = st.toggle("Enable Dynamic Custom Piping", value=True)
+    if enable_piping:
+        piping_colors = st.multiselect(
+            "Select Piping Colors (Cycles through selections per generated image)",
+            ["Tarocco Orange", "Gold", "Peach", "Metallic Silver", "Sky Blue", "Gloss Black", "Chalk/Off-White", "Alabaster Cream", "Matching Contrast", "Magenta", "Custom"],
+            default=["Orange", "Gold", "Peach"],
+            key="piping_colors_select"
+        )
+    else:
+        piping_colors = []
+
+with accent_cols[1]:
+    enable_stitching = st.toggle("Enable Dynamic Custom Stitching", value=True)
+    if enable_stitching:
+        stitching_colors = st.multiselect(
+            "Select Stitching Colors (Cycles through selections per generated image)",
+            ["Burnt Orange", "Austin Gold/Kyalami Gold", "Metallic Silver", "Salmon Peach/Desert Sand", "Electric Blue", "Obsidian Black/Piano Gloss Black", "Yas Marina-Blue/Miami-Blue", "True White", "Racing Yellow", "Macadamia/Alabaster Cream", "Rubystone Magenta/Viola Parsifae"],
+            default=["Orange", "Gold", "Peach"],
+            key="stitching_colors_select"
+        )
+    else:
+        stitching_colors = []
+
+st.divider()
 
 # ==========================================
 # 🖼️ GENERATION SETTINGS
@@ -259,12 +292,21 @@ if st.button("🚀 EXECUTE FULL SUITE"):
         st.write(f"🎨 Generating {num_images} AI Design Concept(s)...")
         
         for i in range(num_images):
-            # 1. Determine Accent Color for this iteration
-            current_accent = "Standard"
-            accent_phrase = ""
-            if enable_accents and accent_colors:
-                current_accent = accent_colors[i % len(accent_colors)]
-                accent_phrase = f" highly visible {current_accent} piping and {current_accent} contrast stitching,"
+            # 1. Determine Piping & Stitching Selection for this iteration
+            current_piping = "Standard"
+            current_stitching = "Standard"
+            piping_phrase = ""
+            stitching_phrase = ""
+            
+            if enable_piping and piping_colors:
+                current_piping = piping_colors[i % len(piping_colors)]
+                piping_phrase = f" highly visible {current_piping} piping,"
+                
+            if enable_stitching and stitching_colors:
+                current_stitching = stitching_colors[i % len(stitching_colors)]
+                stitching_phrase = f" luxury {current_stitching} contrast stitching,"
+                
+            accent_phrase = f"{piping_phrase}{stitching_phrase}"
             
             # 1b. Determine Quilt Design for this iteration
             current_quilt = "Standard"
@@ -282,7 +324,7 @@ if st.button("🚀 EXECUTE FULL SUITE"):
             elif patch_loc == "Seat Base/Seat Pan":
                 patch_phrase = f" broad {patch_color} structural side strips positioned exclusively on the left and right horizontal base side bolsters of the seat base, main, flat horizontal patch you sit on (keeping center clear),"
             elif patch_loc == "Bolsters":
-                patch_phrase = f" broad {patch_color}  These are the raised, padded side sections on the backrest and bottom cushion on horizontal base center bolsters of the seat base, main, flat horizontal patch you sit on (keeping side clear),"    
+                patch_phrase = f" broad {patch_color} These are the raised, padded side sections on the backrest and bottom cushion on horizontal base center bolsters of the seat base, main, flat horizontal patch you sit on (keeping side clear),"
             elif patch_loc == "Back side Bolsters+base side Bolsters":
                 patch_phrase = f" broad {patch_color} structural side patches running exclusively along the full outer side bolsters of both the seat back and the seat base (left and right edges only, keeping center clear),"
             
@@ -294,12 +336,12 @@ if st.button("🚀 EXECUTE FULL SUITE"):
                 f"{custom_instruction}. {lighting} lighting, 8k ultra-realistic, material macro detail."
             )
             
-            # Generate Image
+            # Generate Image (Handling Dictionary Config)
             img = generate_ai_image(iteration_prompt, MODEL_OPTIONS[selected_model])
             if img:
-                generated_concepts.append((img, current_accent, current_quilt))
+                generated_concepts.append((img, current_piping, current_stitching, current_quilt))
                 
-            # Buffer for Gemini Free Tier limits
+            # Buffer for Gemini Free Tier limits to prevent 429 Too Many Requests errors
             if selected_model == "Gemini Imagen 3 (Google Precise Free)" and i < num_images - 1:
                 time.sleep(6.5) 
                 
@@ -314,11 +356,13 @@ if st.button("🚀 EXECUTE FULL SUITE"):
     # --- MATRIX DISPLAY UI ---
     st.markdown("---")
     
+    # Render generated images vertically for FULL native resolution inspection
     st.subheader("🎨 AI-Generated Design Matrix (High-Resolution Inspection)")
     if generated_concepts:
-        for idx, (img, accent, quilt) in enumerate(generated_concepts):
-            st.markdown(f"#### Variant {idx+1} | {accent} Accent | {quilt} Pattern")
+        for idx, (img, piping, stitching, quilt) in enumerate(generated_concepts):
+            st.markdown(f"#### Variant {idx+1} | {piping} Piping | {stitching} Stitching | {quilt} Pattern")
             
+            # Displaying directly in the main container forces maximum native size
             st.image(img, use_container_width=True)
             
             buf = io.BytesIO()
