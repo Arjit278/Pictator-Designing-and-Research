@@ -93,7 +93,6 @@ def call_openrouter(prompt):
 def generate_ai_image(prompt, model_config):
     """GENERATE: Pure AI Design Concept"""
     try:
-        # Dynamically unpack based on config type
         if isinstance(model_config, str):
             model_id = model_config
             provider = "huggingface"
@@ -102,7 +101,6 @@ def generate_ai_image(prompt, model_config):
             provider = model_config.get("provider", "huggingface")
 
         if provider == "google-imagen":
-            # Gemini / Google Imagen Integration
             url = f"https://generativelanguage.googleapis.com/v1beta/models/{model_id}:predict?key={GEMINI_API_KEY}"
             headers = {"Content-Type": "application/json"}
             payload = {
@@ -120,7 +118,6 @@ def generate_ai_image(prompt, model_config):
                 st.error(f"Gemini Generation Failed: HTTP {response.status_code}")
                 return None
         else:
-            # Hugging Face Integration
             client = InferenceClient(model=model_id, token=HF_TOKEN)
             return client.text_to_image(prompt, width=1024, height=768)
     except Exception as e:
@@ -152,7 +149,6 @@ def fetch_market_references(query):
             is_pinterest = "pinterest" in link or "pinterest" in source_name.lower()
             is_trusted = any(td in link for td in TRUSTED_DOMAINS)
             
-            # Adjusted limit to 3 to populate your top row layout perfectly
             if is_pinterest and len(pinterest_refs) < 3:
                 pinterest_refs.append({
                     "img": i["original"], 
@@ -161,7 +157,6 @@ def fetch_market_references(query):
                 })
                 used_domains.add(source_name)
                 
-            # Adjusted limit to 3 to populate your bottom factory row perfectly
             elif is_trusted and not is_pinterest and len(trusted_refs) < 3:
                 trusted_refs.append({
                     "img": i["original"], 
@@ -260,7 +255,8 @@ with accent_cols[0]:
         piping_colors = st.multiselect(
             "Select Piping Colors (Cycles through selections per generated image)",
             ["Tarocco Orange", "Austin Gold", "Desert Sand/Peach", "Metallic Silver", "Sky Blue", "Gloss Black", "Chalk/Off-White", "Alabaster Cream", "Matching Contrast", "Magenta", "Custom"],
-            default=["Tarocco Orange", "Gold", "Peach"], # Corrected default to match available options
+            # Fixed: The defaults now match the available options in the list above.
+            default=["Tarocco Orange", "Austin Gold", "Desert Sand/Peach"],
             key="piping_colors_select"
         )
     else:
@@ -272,7 +268,8 @@ with accent_cols[1]:
         stitching_colors = st.multiselect(
             "Select Stitching Colors (Cycles through selections per generated image)",
             ["Burnt Orange", "Austin Gold/Kyalami Gold", "Metallic Silver", "Salmon Peach/Desert Sand", "Electric Blue", "Obsidian Black/Piano Gloss Black", "Yas Marina-Blue/Miami-Blue", "True White", "Racing Yellow", "Macadamia/Alabaster Cream", "Rubystone Magenta/Viola Parsifae"],
-            default=["Burnt Orange", "Austin Gold/Kyalami Gold", "Salmon Peach/Desert Sand"], # Corrected defaults to match available options
+            # Fixed: The defaults now match the available options in the list above.
+            default=["Burnt Orange", "Austin Gold/Kyalami Gold", "Metallic Silver"],
             key="stitching_colors_select"
         )
     else:
