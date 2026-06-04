@@ -124,71 +124,67 @@ def generate_ai_image(prompt, model_config):
         st.error(f"Generation Failed: {e}")
         return None
 
+# ==========================================
+# 🌐 PATCH 1: DATA ACQUISITION ENGINE
+# Replace your existing def fetch_market_references(query): function with this:
+# ==========================================
 def fetch_market_references(query):
     try:
+        # Increase num to 60 to ensure we have enough diversity to select 9 perfect links
         params = {
             "engine": "google_images", 
-            "q": f"{query} car seat covers leather", 
+            "q": f"{query} car seat covers leather 2028 design", 
             "api_key": SERP_API_KEY, 
-            "num": 40
+            "num": 60
         }
         r = requests.get("https://serpapi.com/search", params=params, timeout=10)
         results = r.json().get("images_results", [])
         
         pinterest_refs = []
-        trusted_refs = []
-        used_domains = set()
+        random_refs = []
+        used_domains = set() # Tracks the 'source' name to prevent repetition
 
         for i in results:
             source_name = i.get("source", "").strip()
             link = i.get("link", "").lower()
+            original_img = i.get("original")
             
-            if source_name in used_domains:
+            # Skip if crucial data is missing or we already have this domain
+            if not original_img or not link or source_name in used_domains:
                 continue
             
+            # Identify source type
             is_pinterest = "pinterest" in link or "pinterest" in source_name.lower()
-            is_trusted = any(td in link for td in TRUSTED_DOMAINS)
             
+            ref_data = {
+                "img": original_img, 
+                "link": i.get("link"), 
+                "src": source_name
+            }
+
+            # 📌 Bucket 1: Pinterest Trends (Strictly 3)
             if is_pinterest and len(pinterest_refs) < 3:
-                pinterest_refs.append({
-                    "img": i["original"], 
-                    "link": i["link"], 
-                    "src": "Pinterest" if "pinterest" not in source_name.lower() else source_name
-                })
+                pinterest_refs.append(ref_data)
                 used_domains.add(source_name)
                 
-            elif is_trusted and not is_pinterest and len(trusted_refs) < 3:
-                trusted_refs.append({
-                    "img": i["original"], 
-                    "link": i["link"], 
-                    "src": source_name
-                })
+            # 🏢 Bucket 2: Non-Pinterest/Random Industry Domains (Strictly 6)
+            elif not is_pinterest and len(random_refs) < 6:
+                random_refs.append(ref_data)
                 used_domains.add(source_name)
             
-            if len(pinterest_refs) + len(trusted_refs) >= 6:
+            # Stop once we have our perfect 9-image blend (6 Random, 3 Pinterest)
+            if len(pinterest_refs) >= 3 and len(random_refs) >= 6:
                 break
         
-        filtered_refs = pinterest_refs + trusted_refs
-        
-        if len(filtered_refs) < 6:
-            for i in results:
-                source_name = i.get("source", "").strip()
-                link = i.get("link", "").lower()
-                if source_name not in used_domains:
-                    is_pinterest = "pinterest" in link or "pinterest" in source_name.lower()
-                    filtered_refs.append({
-                        "img": i["original"], 
-                        "link": i["link"], 
-                        "src": "Pinterest" if is_pinterest and "pinterest" not in source_name.lower() else source_name
-                    })
-                    used_domains.add(source_name)
-                if len(filtered_refs) >= 6: break
+        # Merge lists, keeping Pinterest first for the layout
+        merged_refs = pinterest_refs + random_refs
                 
-        return filtered_refs
+        return merged_refs
     except Exception as e:
-        st.sidebar.error(f"Search Fallback Engaged: {e}")
+        st.sidebar.error(f"Search Engine Timeout (9-Image Pipeline): {e}")
         return []
 
+                           
 # --------------------------------------
 # 🎯 UI: SMART CONFIGURATOR
 # --------------------------------------
@@ -375,31 +371,38 @@ if st.button("🚀 EXECUTE FULL SUITE"):
 
     col_left, col_right = st.columns([2, 1])
     with col_left:
-        st.subheader("🌍 Verified Market References & Live Shop Links")
+        st.subheader("🌍 Verified Market References & Live Shop Links (6 Random | 3 Pinterest)")
         if market_refs:
-            # Separate Pinterest trends from mainstream retail domains
-            pin_refs = [r for r in market_refs if "pinterest" in r["src"].lower()]
-            other_refs = [r for r in market_refs if r not in pin_refs]
+            # Re-separate for UI grouping
+            pin_ui_refs = [r for r in market_refs if "pinterest" in r["src"].lower() or "pinterest" in r["link"].lower()]
+            random_ui_refs = [r for r in market_refs if r not in pin_ui_refs]
             
-            # 📌 Row 1: Dedicated 3-Column Pinterest Layout
-            if pin_refs:
-                st.markdown("#### 📌 Top Pinterest Design Anchors (2026 Trends)")
-                m_cols_pin = st.columns(3)
-                for idx, ref in enumerate(pin_refs[:3]):
-                    with m_cols_pin[idx]:
-                        st.image(ref["img"], caption="Trend Reference", use_container_width=True)
-                        st.link_button("🔗 View on Pinterest", ref["link"])
+            # 📌 Dedicated 3-Column Pinterest Trend Anchor Row
+            if pin_ui_refs:
+                st.markdown("#### 📌 Top Pinterest Design Anchors (Strict Prompt-Based)")
+                cols_pin = st.columns(3)
+                # Take exactly 3 or what's available if fewer found
+                for idx, ref in enumerate(pin_ui_refs[:3]):
+                    with cols_pin[idx]:
+                        # Use a container so the link button stays attached to the image
+                        with st.container():
+                            st.image(ref["img"], caption=f"Trend Ref {idx+1}", use_container_width=True)
+                            st.link_button("🔗 View on Pinterest", ref["link"], use_container_width=True)
                 st.write("") # Spacer
             
-            # 🏢 Row 2: Standard Industry Domains
-            if other_refs:
-                st.markdown("#### 🏢 Factory & OEM Live Specifications")
-                m_cols_other = st.columns(3)
-                for idx, ref in enumerate(other_refs[:3]):
-                    with m_cols_other[idx % 3]:
-                        st.image(ref["img"], caption=f"Ref from {ref['src']}", use_container_width=True)
-                        st.link_button(f"🔗 View on {ref['src']}", ref["link"])
-                    
+            # 🏢 6-Image Random Industry/Factory Domain Grid (Strict Prompt-Based)
+            if random_ui_refs:
+                st.markdown("#### 🏢 Factory & Industry Live Market Specifications")
+                # Use a 3-column grid for the 6 images, which creates 2 rows naturally
+                cols_rand = st.columns(3)
+                # Take exactly 6 or what's available
+                for idx, ref in enumerate(random_ui_refs[:6]):
+                    # Cycle through columns based on index
+                    with cols_rand[idx % 3]:
+                        with st.container():
+                            st.image(ref["img"], caption=f"Market Ref {idx+1} from {ref['src']}", use_container_width=True)
+                            st.link_button(f"🔗 View on {ref['src']}", ref["link"], use_container_width=True)
+                            
     with col_right:
         st.subheader("📈 Flashmind Analysis")
         st.info(analysis)
