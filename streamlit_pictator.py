@@ -206,13 +206,13 @@ with st.expander("🧠 Smart Design Configurator (2026 Specs)", expanded=True):
     colA, colB, colC = st.columns(3)
     with colA:
         car = st.selectbox("Vehicle", ["Maruti Wagon R", "Maruti Grand Vitara", "Custom/Other"])
-        pattern = st.selectbox("Stitching", ["Hex-Cell", "Puff", "Minimalist Flat"])
+        pattern = st.selectbox("Stitching", ["Hex-Cell", "Puff", "Minimalist Flat", "Diamond Stitching", "Custom-Prompt Based"])
     with colB:
-        material = st.selectbox("Material", ["1200 GSM Nappa", "Cotton", "Synthetic Leather", "Carbon Fiber Leather"])
+        material = st.selectbox("Material", ["1200 GSM Nappa", "Cotton", "Synthetic Leather", "Carbon Fiber Leather", "Custom-Prompt Based"])
         colors = st.text_input("Colorway", value="Tan & Charcoal")
     with colC:
-        lighting = st.selectbox("Lighting", ["Studio", "Blueprint", "Cinematic Showroom"])
-        market = st.selectbox("Market Tier", ["Luxury", "Affordable", "Sports", "OEM Upgrade"])
+        lighting = st.selectbox("Lighting", ["Studio", "Blueprint", "Cinematic Showroom", "Custom"])
+        market = st.selectbox("Market Tier", ["Luxury", "Affordable", "Sports", "OEM Upgrade", "Custom"])
     
     custom_instruction = st.text_area("✍️ Custom Engineering Instructions", placeholder="Add specific details like contrast piping or perforation...")
 
@@ -235,28 +235,13 @@ with patch_cols[0]:
 with patch_cols[1]:
     patch_color = st.selectbox(
         "Patch Color", 
-        ["White", "Beige", "Cream", "Grey", "Silver", "Blue", "Red", "Black", "Custom-Prompt Based"], 
+        ["Ivory White","Neon Lime/Cyber Yellow" "Beige", "Cream", "Slate Grey", "Silver", "Blue", "Crimson Red", "Black", "Tan/Saddle Brown", "Custom-Prompt Based"], 
         disabled=(patch_loc == "None")
     )
 
 st.divider()
 
-# ==========================================
-# 🧵 PIPING & STITCHING DETAILS
-# ==========================================
-st.markdown("### 🧵 Accent Details (Piping & Stitching)")
-enable_accents = st.toggle("Enable Dynamic Custom Piping & Stitching", value=True)
-
-if enable_accents:
-    accent_colors = st.multiselect(
-        "Select Accent Colors (Cycles through selections per generated image)",
-        ["Orange", "Gold", "Peach", "Sky Blue", "Black", "White", "Cream", "Magenta", "Custom-Prompt Based"],
-        default=["Orange", "Gold", "Peach"]
-    )
-else:
-    accent_colors = []
-
-st.divider()
+custom pipig and sti
 
 # ==========================================
 # 🖼️ GENERATION SETTINGS
