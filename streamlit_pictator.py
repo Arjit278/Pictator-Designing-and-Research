@@ -21,8 +21,8 @@ GEMINI_API_KEY = st.secrets.get("GEMINI_API_KEY", "")
 TRUSTED_DOMAINS = [
     "https://za.pinterest.com/search/pins/?q=seat%20covers", "autofit.in", "autotextile.com", "cncstitching.com",
     "seatcoversunlimited.com", "foamvilla.com", "sa.made-in-china.com",
-    "autoclint.com", "autoform.in", "coverking.com", "katzkin.com",
-    "amazon.in", "autofurnish.com", "elegantautoretail.com", "carwale.com"
+    "autoclint.com", "autoform.in", "coverking.com", "katzkin.com", "pinterest.com",
+    "amazon.in", "sa.made-in-china.com", "pinterest.com/search/pins/?q=seat%20covers", "autofurnish.com", "elegantautoretail.com", "carwale.com"
 ]
 
 st.title("🏎️ Pictator Pro – CEO Engineering Suite")
