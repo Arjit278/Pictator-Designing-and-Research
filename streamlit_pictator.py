@@ -63,7 +63,6 @@ ANALYSIS_MODELS = [
     "gpt-oss-20b",
     "Qwen3 Next 80B A3B Instruct (free)",
     "Qwen3 Coder 480B A35B (free)"
-    
 ]
 
 def call_openrouter(prompt):
@@ -94,7 +93,6 @@ def call_openrouter(prompt):
 def generate_ai_image(prompt, model_config):
     """GENERATE: Pure AI Design Concept"""
     try:
-        # Dynamically unpack based on config type
         if isinstance(model_config, str):
             model_id = model_config
             provider = "huggingface"
@@ -103,7 +101,6 @@ def generate_ai_image(prompt, model_config):
             provider = model_config.get("provider", "huggingface")
 
         if provider == "google-imagen":
-            # Gemini / Google Imagen Integration
             url = f"https://generativelanguage.googleapis.com/v1beta/models/{model_id}:predict?key={GEMINI_API_KEY}"
             headers = {"Content-Type": "application/json"}
             payload = {
@@ -121,7 +118,6 @@ def generate_ai_image(prompt, model_config):
                 st.error(f"Gemini Generation Failed: HTTP {response.status_code}")
                 return None
         else:
-            # Hugging Face Integration
             client = InferenceClient(model=model_id, token=HF_TOKEN)
             return client.text_to_image(prompt, width=1024, height=768)
     except Exception as e:
@@ -130,7 +126,6 @@ def generate_ai_image(prompt, model_config):
 
 def fetch_market_references(query):
     try:
-        # Increase num to 40 to get a wide variety of sources to filter from
         params = {
             "engine": "google_images", 
             "q": f"{query} car seat covers leather", 
@@ -142,20 +137,18 @@ def fetch_market_references(query):
         
         pinterest_refs = []
         trusted_refs = []
-        used_domains = set() # Tracks the 'source' name to prevent repetition
+        used_domains = set()
 
         for i in results:
             source_name = i.get("source", "").strip()
             link = i.get("link", "").lower()
             
-            # Skip if we've already used this exact source name
             if source_name in used_domains:
                 continue
             
             is_pinterest = "pinterest" in link or "pinterest" in source_name.lower()
             is_trusted = any(td in link for td in TRUSTED_DOMAINS)
             
-            # Route to Pinterest bucket (max 2)
             if is_pinterest and len(pinterest_refs) < 2:
                 pinterest_refs.append({
                     "img": i["original"], 
@@ -164,7 +157,6 @@ def fetch_market_references(query):
                 })
                 used_domains.add(source_name)
                 
-            # Route to Trusted bucket (max 4)
             elif is_trusted and not is_pinterest and len(trusted_refs) < 4:
                 trusted_refs.append({
                     "img": i["original"], 
@@ -173,14 +165,11 @@ def fetch_market_references(query):
                 })
                 used_domains.add(source_name)
             
-            # Stop once we have our perfect 6-image blend
             if len(pinterest_refs) + len(trusted_refs) >= 6:
                 break
         
-        # Merge the lists
         filtered_refs = pinterest_refs + trusted_refs
         
-        # --- FALLBACK: If we still don't have 6 unique links ---
         if len(filtered_refs) < 6:
             for i in results:
                 source_name = i.get("source", "").strip()
@@ -238,6 +227,11 @@ with patch_cols[0]:
         ["None", "Shoulder Support", "Seat Back Bolsters", "Back side Bolsters+base side Bolsters"], 
         help="Select structural accent location for the seat cover."
     )
+    quilt_designs = st.multiselect(
+        "Select Quilt Designs (Cycles through selections per generated image)",
+        ["Elongated Hexagons & Hex-Stitch", "Minimalist Channel Tucks", "Perforated Micro-Quilting", "Custom"],
+        default=["Elongated Hexagons & Hex-Stitch"]
+    )
 with patch_cols[1]:
     patch_color = st.selectbox(
         "Patch Color", 
@@ -279,15 +273,20 @@ if st.button("🚀 EXECUTE FULL SUITE"):
     with st.status("Engineering Intelligence...") as status:
         st.write(f"🎨 Generating {num_images} AI Design Concept(s)...")
         
-        # Loop strictly through the designated number of images
         for i in range(num_images):
-            
             # 1. Determine Accent Color for this iteration
             current_accent = "Standard"
             accent_phrase = ""
             if enable_accents and accent_colors:
                 current_accent = accent_colors[i % len(accent_colors)]
                 accent_phrase = f" highly visible {current_accent} piping and {current_accent} contrast stitching,"
+            
+            # 1b. Determine Quilt Design for this iteration
+            current_quilt = "Standard"
+            quilt_phrase = ""
+            if quilt_designs:
+                current_quilt = quilt_designs[i % len(quilt_designs)]
+                quilt_phrase = f" featuring premium {current_quilt} quilt design elements,"
             
             # 2. Determine Strict Spatial Patch Logic
             patch_phrase = ""
@@ -298,20 +297,20 @@ if st.button("🚀 EXECUTE FULL SUITE"):
             elif patch_loc == "Back side Bolsters+base side Bolsters":
                 patch_phrase = f" broad {patch_color} structural side patches running exclusively along the full outer side bolsters of both the seat back and the seat base (left and right edges only, keeping center clear),"
             
-            # 3. RE-ENGINEERED PROMPT: Built freshly here for every image to enforce structure
+            # 3. RE-ENGINEERED PROMPT
             iteration_prompt = (
                 f"Professional automotive interior photography, {car} custom seat covers. "
-                f"STRICT STRUCTURAL REQUIREMENTS:{patch_phrase}{accent_phrase} "
+                f"STRICT STRUCTURAL REQUIREMENTS:{patch_phrase}{accent_phrase}{quilt_phrase} "
                 f"Base design: {pattern} pattern, premium {material}, {colors} theme. "
                 f"{custom_instruction}. {lighting} lighting, 8k ultra-realistic, material macro detail."
             )
             
-            # Generate Image (Handling Dictionary Config)
+            # Generate Image
             img = generate_ai_image(iteration_prompt, MODEL_OPTIONS[selected_model])
             if img:
-                generated_concepts.append((img, current_accent))
+                generated_concepts.append((img, current_accent, current_quilt))
                 
-            # Buffer for Gemini Free Tier limits to prevent 429 Too Many Requests errors
+            # Buffer for Gemini Free Tier limits
             if selected_model == "Gemini Imagen 3 (Google Precise Free)" and i < num_images - 1:
                 time.sleep(6.5) 
                 
@@ -326,13 +325,11 @@ if st.button("🚀 EXECUTE FULL SUITE"):
     # --- MATRIX DISPLAY UI ---
     st.markdown("---")
     
-    # Render generated images vertically for FULL native resolution inspection
     st.subheader("🎨 AI-Generated Design Matrix (High-Resolution Inspection)")
     if generated_concepts:
-        for idx, (img, accent) in enumerate(generated_concepts):
-            st.markdown(f"#### Variant {idx+1} | {accent} Accent")
+        for idx, (img, accent, quilt) in enumerate(generated_concepts):
+            st.markdown(f"#### Variant {idx+1} | {accent} Accent | {quilt} Pattern")
             
-            # Displaying directly in the main container forces maximum native size
             st.image(img, use_container_width=True)
             
             buf = io.BytesIO()
@@ -344,8 +341,6 @@ if st.button("🚀 EXECUTE FULL SUITE"):
     with col_left:
         st.subheader("🌍 Verified Market References & Live Shop Links")
         if market_refs:
-            # We keep the market references in a grid to save space, 
-            # since they are just feasibility checks, not your primary design outputs.
             m_cols = st.columns(3)
             for idx, ref in enumerate(market_refs):
                 with m_cols[idx % 3]:
