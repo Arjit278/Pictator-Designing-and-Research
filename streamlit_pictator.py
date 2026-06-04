@@ -448,7 +448,7 @@ if st.button("🚀 EXECUTE FULL SUITE"):
             
             # 🏢 ROW 2 (and naturally Row 3): 6-Image Factory & OEM Grid
             if other_ui_refs:
-                st.markdown("#### 🏢 Factory & OEM Live Specifications (2028 Designs)")
+                st.markdown("#### 🏢 Factory & OEM Live Specifications (2026 Futuristic Designs)")
                 # A 3-column structure for the 6 images automatically creates a 2x3 grid
                 cols_rand = st.columns(3)
                 # Take exactly 6 or what's available
